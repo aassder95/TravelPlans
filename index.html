@@ -83,6 +83,13 @@ tbody tr { display:block; padding:11px 12px; border:1px solid var(--border); bor
 .schedule-time { display:block; margin-bottom:5px; color:var(--focus); font-size:11px; font-weight:700; }
 .schedule-place { display:block; color:var(--text-primary); font-size:15px; font-weight:700; line-height:1.4; }
 .schedule-detail { display:block; margin-top:6px; padding-top:6px; border-top:1px solid var(--border); color:var(--text-muted); font-size:11px; line-height:1.4; }
+.travel-group { margin-top:8px; border-top:1px solid var(--border); }
+.traveler-row { display:grid; grid-template-columns:auto minmax(0,1fr); align-items:start; gap:8px; padding:10px 0; }
+.traveler-row + .traveler-row { border-top:1px solid var(--border); }
+.traveler-badge { min-width:64px; padding:4px 6px; border:1px solid var(--accent); border-radius:999px; background:var(--selection); color:var(--text-primary); font-size:10.5px; font-weight:700; text-align:center; white-space:nowrap; }
+.traveler-route { display:block; color:var(--text-primary); font-size:12.5px; font-weight:700; line-height:1.5; }
+.traveler-note { display:block; margin-top:2px; color:var(--text-muted); font-size:11px; line-height:1.4; }
+.travel-meeting { padding:9px 10px; border-left:3px solid var(--focus); background:var(--secondary); color:var(--text-primary); font-size:12px; font-weight:700; }
 .candidate-details { margin-top:6px; border-top:1px solid var(--border); }
 .candidate-details summary { display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:44px; color:var(--text-primary); font-size:13px; font-weight:700; cursor:pointer; list-style:none; }
 .candidate-details summary::-webkit-details-marker { display:none; }
@@ -176,7 +183,7 @@ const trips = [{
       {mode:"drive",points:[8,9]}
     ],
     rows: [
-      ["08:48~13:05","수원","여수엑스포역","열차 이동",""],["13:05~13:27","","여수엑스포역","여자친구 도착 대기",""],
+      ["08:48~13:27","","여수엑스포역","각자의 출발, 여수에서 만나기","",null,{journeys:[["수원 출발","08:48","수원역","13:05","여수엑스포역","22분 먼저 도착"],["동탄 출발","10:37","동탄역","13:27","여수엑스포역",""]],meeting:"13:27 · 여수엑스포역 합류"}],
       ["13:27~14:00","","여수엑스포역","화장·준비",""],["14:00~14:15","여수엑스포역","숙소(짐 맡기기)","이동","택시"],
       ["14:15~14:20","","숙소(짐 맡기기)","짐 맡기기",""],["14:20~14:35","숙소(짐 맡기기)","이순신광장 점심 권역","이동","택시"],
       ["14:35~15:35","","이순신광장 점심 권역","점심","",[["순이네밥상","돌게장정식 · 갈치조림"],["진남옥","한우뭇국 · 수육전골"],["팔계촌","제육볶음 · 고등어쌈밥"],["순심원","해물철판짜장 · 탕수육"]]],["15:35~15:40","이순신광장 점심 권역","이순신광장 먹거리 골목","이동","도보"],
@@ -228,7 +235,7 @@ const trips = [{
       ["11:00~11:20","숙소","엑스포역 권역","이동","택시"],["11:20~12:20","","미가칼국수 또는 엑스포식육식당","점심","",[["미가칼국수","칼국수"],["엑스포식육식당","제육볶음 · 찌개"]]],
       ["12:20~12:30","점심 식당","레인블러","이동","도보"],["12:30~13:30","","레인블러","카페",""],
       ["13:30~13:40","레인블러","여수엑스포역","이동","도보"],["13:40~14:32","","여수엑스포역","승차 준비",""],
-      ["14:32~16:12","여수엑스포역","익산역","열차 이동",""],["16:12~16:27","","익산역","환승","15분"],["16:27~17:23","익산역","광명역","열차 이동",""]
+      ["14:32~17:23","여수엑스포역","","함께 출발, 각자의 집으로","",null,{journeys:[["광명행","14:32","여수엑스포역","17:23","광명역","익산역 환승"],["동탄행","14:32","여수엑스포역","17:17","동탄역",""]]}]
     ]
   }
 }}];
@@ -500,7 +507,7 @@ function renderSchedule(plan, startIdx, endIdx) {
   const body = document.getElementById("schedule-body");
   body.replaceChildren();
   rows.forEach(row => {
-    const [time, origin, dest, activity, note, candidates] = row;
+    const [time, origin, dest, activity, note, candidates, travel] = row;
     const tr = document.createElement("tr");
     const td = document.createElement("td");
     const timeText = document.createElement("span");
@@ -510,9 +517,39 @@ function renderSchedule(plan, startIdx, endIdx) {
     timeText.className = "schedule-time";
     timeText.textContent = time;
     placeText.className = "schedule-place";
-    placeText.textContent = origin && dest ? `${origin} → ${dest}` : dest || origin;
+    placeText.textContent = travel ? activity : origin && dest ? `${origin} → ${dest}` : dest || origin;
     td.append(timeText, placeText);
-    if (candidates?.length) {
+    if (travel) {
+      const group = document.createElement("div");
+      group.className = "travel-group";
+      travel.journeys.forEach(([label, startTime, startPlace, endTime, endPlace, journeyNote]) => {
+        const journey = document.createElement("div");
+        const badge = document.createElement("span");
+        const content = document.createElement("div");
+        const route = document.createElement("strong");
+        journey.className = "traveler-row";
+        badge.className = "traveler-badge";
+        badge.textContent = label;
+        route.className = "traveler-route";
+        route.textContent = `${startTime} ${startPlace} → ${endTime} ${endPlace}`;
+        content.append(route);
+        if (journeyNote) {
+          const journeyNoteText = document.createElement("span");
+          journeyNoteText.className = "traveler-note";
+          journeyNoteText.textContent = journeyNote;
+          content.append(journeyNoteText);
+        }
+        journey.append(badge, content);
+        group.append(journey);
+      });
+      if (travel.meeting) {
+        const meeting = document.createElement("div");
+        meeting.className = "travel-meeting";
+        meeting.textContent = travel.meeting;
+        group.append(meeting);
+      }
+      td.append(group);
+    } else if (candidates?.length) {
       const details = document.createElement("details");
       const summary = document.createElement("summary");
       const summaryTitle = document.createElement("span");
