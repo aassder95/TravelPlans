@@ -11,7 +11,7 @@ import {
   invalidateMapSize
 } from "./map.js";
 import { loadFootprints, loadTrips } from "./data-loader.js";
-import { renderHome } from "./home.js";
+import { renderHome } from "./home.js?v=20260821-solid-outline";
 import { loadUiState, saveUiState as persistUiState } from "./ui-state.js";
 
 const tripTabs = document.querySelector(".trip-tabs");

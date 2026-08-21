@@ -89,6 +89,7 @@
 - 식당 등 택일 동선이 있으면 모든 후보 경로를 중복 합산하지 않고 각 경로를 별도로 계산한 뒤 대표 중간값 하나를 `약`과 함께 표시한다. 상단 총거리는 정수 km로 반올림한다.
 - WindowTools `DefaultThemeCatalog`의 기본 다크 팔레트와 `Segoe UI`를 사용한다.
 - 별도 빌드 과정 없이 GitHub Pages가 정적 HTML·CSS·JavaScript·JSON을 그대로 배포하는 구조를 유지한다.
+- 공통 CSS나 모듈 구조를 변경하면 `index.html`의 CSS·앱 버전값과 `assets/js/app.js`의 해당 하위 모듈 버전값을 함께 갱신해 이전 파일 캐시가 섞이지 않게 한다.
 - 여행 데이터 변경 후 `npm test`를 실행해 id 중복, 잘못된 참조, 필수 속성 누락을 확인한다.
 - 화면은 아이폰 12의 CSS 해상도인 390×844를 기준으로 작성하고 일정표를 가로 스크롤 방식으로 만들지 않는다.
 - 지도는 Leaflet과 OpenStreetMap 실제 지도를 사용한다.
