@@ -347,6 +347,27 @@ function createFootprintItem(record, onSelectTrip) {
   return item;
 }
 
+function createMapRecordItem(record, onSelectTrip) {
+  const item = document.createElement("article");
+  item.className = "home-city-card-date-item";
+  const date = document.createElement("span");
+  date.textContent = recordDate(record);
+  item.append(date);
+  if (record.planned) {
+    const planned = document.createElement("em");
+    planned.textContent = "여행 예정";
+    item.append(planned);
+  }
+  if (record.tripId) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = "일정 보기";
+    button.addEventListener("click", () => onSelectTrip(record.tripId));
+    item.append(button);
+  }
+  return item;
+}
+
 function sortRecords(records) {
   return [...records].sort((a, b) => {
     if (!a.startDate && !b.startDate)
@@ -383,7 +404,7 @@ export async function renderHome({ footprints, trips, onSelectTrip }) {
   const overseasRecords = allRecords.filter(record => record.country !== "KR");
   const visitedCityIds = new Set(footprints.records.filter(record => record.country === "KR").flatMap(record => record.cities));
   const plannedCityIds = new Set(plannedRecords.flatMap(record => record.cities));
-  const interactiveCityIds = new Set(allRecords.filter(record => record.startDate || record.tripId).flatMap(record => record.cities));
+  const interactiveCityIds = new Set(allRecords.flatMap(record => record.cities));
 
   document.getElementById("home-domestic-count").textContent = `${footprints.records.filter(record => record.country === "KR" && record.startDate).length}번의 여행`;
   document.getElementById("home-city-count").textContent = `${visitedCityIds.size}개 지역`;
@@ -399,12 +420,18 @@ export async function renderHome({ footprints, trips, onSelectTrip }) {
       ? domesticRecords.filter(record => record.cities.includes(region.footprintCityId))
       : [];
     cityCardName.textContent = region.name;
-    if (records.length) {
-      cityCardRecords.replaceChildren(...sortRecords(records).map(record => createFootprintItem(record, onSelectTrip)));
+    const datedRecords = records.filter(record => record.startDate);
+    if (datedRecords.length) {
+      cityCardRecords.hidden = false;
+      cityCardRecords.replaceChildren(...sortRecords(datedRecords).map(record => createMapRecordItem(record, onSelectTrip)));
+    } else if (records.length) {
+      cityCardRecords.replaceChildren();
+      cityCardRecords.hidden = true;
     } else {
       const empty = document.createElement("p");
       empty.className = "home-city-card-empty";
       empty.textContent = "아직 발자국이 없는 지역";
+      cityCardRecords.hidden = false;
       cityCardRecords.replaceChildren(empty);
     }
     cityCard.hidden = false;

@@ -67,8 +67,10 @@ h1 { margin:0; font-family:"Segoe UI Semibold","Segoe UI",sans-serif; font-size:
 .home-city-card-heading strong { color:var(--text-primary); font-size:15px; }
 .home-city-card-heading button { flex:0 0 auto; width:28px; height:28px; padding:0; border:0; border-radius:5px; background:var(--secondary); color:var(--text-muted); font-size:18px; cursor:pointer; }
 .home-city-card-records { margin-top:6px; border-top:1px solid var(--border); }
-.home-city-card .footprint-item { min-height:45px; padding:8px 1px; }
-.home-city-card .footprint-item:last-child { padding-bottom:1px; }
+.home-city-card-records[hidden] { display:none; }
+.home-city-card-date-item { display:flex; align-items:center; gap:6px; min-height:38px; padding:7px 1px 1px; color:var(--text-muted); font-size:10.5px; }
+.home-city-card-date-item em { color:#f0c76e; font-size:9.5px; font-style:normal; font-weight:700; }
+.home-city-card-date-item button { margin-left:auto; min-height:28px; padding:4px 8px; border:1px solid var(--accent); border-radius:5px; background:var(--selection); color:var(--text-primary); font-size:10px; font-weight:700; cursor:pointer; }
 .home-city-card-empty { margin:0; padding:9px 1px 1px; color:var(--text-muted); font-size:11px; }
 .home-map-legend { display:flex; justify-content:center; gap:16px; margin-top:9px; color:var(--text-muted); font-size:10.5px; }
 .home-map-legend span { display:flex; align-items:center; gap:5px; }
