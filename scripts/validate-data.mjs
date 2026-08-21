@@ -10,10 +10,13 @@ try {
   const manifest = validateManifest(JSON.parse(await fs.readFile(manifestPath, "utf8")));
   const footprints = validateFootprints(JSON.parse(await fs.readFile(path.join(root, "data", "footprints.json"), "utf8")));
   const mapData = JSON.parse(await fs.readFile(path.join(root, "assets", "maps", "city-overlays.json"), "utf8"));
-  if (mapData.version !== 2 || !Array.isArray(mapData.regions) || mapData.regions.length !== 17)
+  if (mapData.version !== 3 || mapData.coordinateSpace !== "national" || !Array.isArray(mapData.regions) || mapData.regions.length !== 17)
     throw new Error("홈 시군구 지도 데이터가 올바르지 않습니다.");
   const boundaryCount = mapData.regions.reduce((count, region) => {
-    if (!region.provinceId || !Array.isArray(region.paths) || region.paths.length === 0)
+    if (!region.provinceId
+      || JSON.stringify(region.viewBox) !== JSON.stringify([0, 0, 800, 759])
+      || !Array.isArray(region.paths)
+      || region.paths.length === 0)
       throw new Error(`홈 지도 행정구역이 비어 있습니다: ${region.provinceId ?? "이름 없음"}`);
     return count + region.paths.length;
   }, 0);

@@ -118,14 +118,16 @@ function appendRegionOverlays(svg, overlayData, cities, visitedCityIds, plannedC
     });
     svg.append(clippedGroup);
 
-    const [sourceX, sourceY, sourceWidth, sourceHeight] = region.viewBox;
-    const targetBox = provincePath.getBBox();
-    const scaleX = targetBox.width / sourceWidth;
-    const scaleY = targetBox.height / sourceHeight;
-    sourceGroup.setAttribute(
-      "transform",
-      `translate(${targetBox.x} ${targetBox.y}) scale(${scaleX} ${scaleY}) translate(${-sourceX} ${-sourceY})`
-    );
+    if (overlayData.coordinateSpace !== "national") {
+      const [sourceX, sourceY, sourceWidth, sourceHeight] = region.viewBox;
+      const targetBox = provincePath.getBBox();
+      const scaleX = targetBox.width / sourceWidth;
+      const scaleY = targetBox.height / sourceHeight;
+      sourceGroup.setAttribute(
+        "transform",
+        `translate(${targetBox.x} ${targetBox.y}) scale(${scaleX} ${scaleY}) translate(${-sourceX} ${-sourceY})`
+      );
+    }
 
     regionGroups.forEach((regionGroup, generatedKey) => {
       const firstBoundary = regionGroup.querySelector(".home-subregion-shape").dataset.boundary;
