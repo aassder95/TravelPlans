@@ -1,22 +1,38 @@
 # 똥뚜 여행계획
 
-아이폰 12의 390×844 화면을 기준으로 만든 모바일 전용 단일 HTML 여행계획입니다. PC에서는 `index.html`을 더블클릭하면 열리고, 실제 지도 타일과 도로 경로는 인터넷 연결이 필요합니다.
+아이폰 12의 390×844 화면을 기준으로 만든 모바일 여행계획 웹페이지입니다. 여행별 데이터와 공통 UI를 분리해 여행이 늘어나도 같은 화면과 기능을 재사용합니다. 실제 지도 타일과 도로 경로는 인터넷 연결이 필요합니다.
 
 ## 파일 구성
 
-- `index.html`: 화면, 스타일, 여행별 일정 데이터와 지도 기능을 모두 포함한 모바일용 단일 파일
+- `index.html`: 모든 여행이 공통으로 사용하는 화면 뼈대
+- `assets/app.css`: 아이폰 12 기준 모바일 스타일과 공용 테마
+- `assets/js/app.js`: 여행 데이터 로딩, 탭, 선택 상태와 화면 연결
+- `assets/js/schedule.js`: 일정 카드와 현재 일정 렌더링
+- `assets/js/map.js`: Leaflet 지도, 마커, 경로와 이동거리 계산
+- `data/trips.json`: 페이지에 표시할 여행 목록 매니페스트
+- `data/trips/*.json`: 여행별 날짜·일정·장소·동선 데이터
 - `robots.txt`: 검색엔진이 사이트를 수집하지 않도록 요청하는 설정
 - `.nojekyll`: GitHub Pages가 파일을 그대로 배포하도록 하는 설정
 
 ## 일정 수정
 
-`index.html` 하단 스크립트의 `trips`에서 여행을 선택하고 해당 날짜의 `rows`를 수정합니다. 한 줄은 아래 순서입니다.
+`data/trips/`에서 해당 여행 JSON을 열고 날짜의 `rows`를 수정합니다. 한 줄은 아래 순서입니다.
 
 ```text
 [시간, 출발지, 도착지, 일정, 비고]
 ```
 
-새 여행은 같은 `trips` 배열에 항목을 하나 추가하고, 그 안의 `days`에 날짜별 일정을 작성합니다. 장소나 이동 경로를 바꾸면 같은 날짜의 `points`와 `segments`도 함께 수정합니다. `segments`의 이동 수단은 차량 `drive`, 도보 `foot`, 케이블카 `cable` 중 하나를 사용합니다.
+새 여행은 `data/trips/`에 JSON 파일을 만들고 `data/trips.json`에 `id`와 파일 경로를 등록합니다. 여행 파일의 `version`은 현재 `1`이며 매니페스트의 `id`와 파일 내부 `id`가 같아야 합니다. 장소나 이동 경로를 바꾸면 같은 날짜의 `points`와 `segments`도 함께 수정합니다. `segments`의 이동 수단은 차량 `drive`, 도보 `foot`, 케이블카 `cable` 중 하나를 사용합니다.
+
+공통 화면이나 동작을 바꾸는 경우에만 `index.html` 또는 `assets/`를 수정합니다. 일정 추가를 위해 기존 여행 데이터나 공통 JavaScript를 복사하지 않습니다.
+
+로컬에서 확인할 때는 JSON을 `fetch`할 수 있도록 저장소 루트에서 간단한 정적 서버를 실행합니다.
+
+```powershell
+python -m http.server 8765 --bind 127.0.0.1
+```
+
+그다음 브라우저에서 `http://127.0.0.1:8765/`를 엽니다. PC에서 `index.html`을 직접 더블클릭하는 방식은 브라우저의 로컬 파일 보안 정책 때문에 여행 JSON을 불러오지 못할 수 있습니다.
 
 지도는 OpenStreetMap을 사용하며 차량 경로는 OSRM, 도보 경로는 OpenStreetMap.de 경로 서버에서 실시간으로 불러옵니다. 경로 서버가 응답하지 않으면 해당 구간만 직선으로 표시됩니다.
 
@@ -90,8 +106,8 @@ https://aassder95.github.io/TravelPlans/
 
 ```powershell
 git status
-git add AGENTS.md README.md index.html robots.txt .nojekyll
-git commit -m "docs(travel): 여수 일요일 저녁 일정 변경"
+git add AGENTS.md README.md index.html assets data robots.txt .nojekyll
+git commit -m "feat(travel): 새 여행 일정 추가"
 git push origin main
 ```
 

@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "trips": [
+    {
+      "id": "yeosu-2026-09",
+      "file": "trips/2026-09-yeosu.json"
+    }
+  ]
+}
