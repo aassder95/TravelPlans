@@ -53,7 +53,22 @@
       "id": "seoul-frequent",
       "label": "서울",
       "country": "KR",
-      "cities": ["seoul"]
+      "cities": [
+        "seoul-jongno",
+        "seoul-jung",
+        "seoul-songpa",
+        "seoul-seongdong",
+        "seoul-mapo",
+        "seoul-gangnam",
+        "seoul-geumcheon",
+        "seoul-yongsan"
+      ]
+    },
+    {
+      "id": "gwacheon-frequent",
+      "label": "과천",
+      "country": "KR",
+      "cities": ["gwacheon"]
     },
     {
       "id": "suwon-frequent",
@@ -75,7 +90,14 @@
     }
   ],
   "cities": [
-    { "id": "seoul", "name": "서울", "provinceId": "서울특별시", "pathIds": ["서울특별시"] },
+    { "id": "seoul-jongno", "name": "서울 종로구", "provinceId": "서울특별시", "boundaryPrefixes": ["종로구"] },
+    { "id": "seoul-jung", "name": "서울 중구", "provinceId": "서울특별시", "boundaryPrefixes": ["중구"] },
+    { "id": "seoul-songpa", "name": "서울 송파구", "provinceId": "서울특별시", "boundaryPrefixes": ["송파구"] },
+    { "id": "seoul-seongdong", "name": "서울 성동구", "provinceId": "서울특별시", "boundaryPrefixes": ["성동구"] },
+    { "id": "seoul-mapo", "name": "서울 마포구", "provinceId": "서울특별시", "boundaryPrefixes": ["마포구"] },
+    { "id": "seoul-gangnam", "name": "서울 강남구", "provinceId": "서울특별시", "boundaryPrefixes": ["강남구"] },
+    { "id": "seoul-geumcheon", "name": "서울 금천구", "provinceId": "서울특별시", "boundaryPrefixes": ["금천구"] },
+    { "id": "seoul-yongsan", "name": "서울 용산구", "provinceId": "서울특별시", "boundaryPrefixes": ["용산구"] },
     { "id": "busan", "name": "부산", "provinceId": "부산광역시", "pathIds": ["부산광역시"] },
     { "id": "incheon", "name": "인천", "provinceId": "인천광역시", "pathIds": ["인천광역시"] },
     { "id": "daejeon", "name": "대전", "provinceId": "대전광역시", "pathIds": ["대전광역시"] },
@@ -83,6 +105,7 @@
     { "id": "suwon", "name": "수원", "provinceId": "경기도", "boundaryPrefixes": ["수원시 "] },
     { "id": "anyang", "name": "안양", "provinceId": "경기도", "boundaryPrefixes": ["안양시 "] },
     { "id": "hwaseong", "name": "화성", "provinceId": "경기도", "boundaryPrefixes": ["화성시"] },
+    { "id": "gwacheon", "name": "과천", "provinceId": "경기도", "boundaryPrefixes": ["과천시"] },
     { "id": "jeonju", "name": "전주", "provinceId": "전라북도", "boundaryPrefixes": ["전주시 "] },
     { "id": "yeosu", "name": "여수", "provinceId": "전라남도", "boundaryPrefixes": ["여수시"] },
     { "id": "fukuoka", "name": "후쿠오카" }

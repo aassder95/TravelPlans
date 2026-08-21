@@ -286,7 +286,7 @@ function showHome() {
   document.getElementById("schedule-panel").hidden = true;
   todayBrief.hidden = true;
   const visitedCities = new Set(footprints.records.filter(record => record.country === "KR").flatMap(record => record.cities));
-  document.getElementById("trip-distance").textContent = `함께한 발자국 · ${visitedCities.size}개 도시`;
+  document.getElementById("trip-distance").textContent = `함께한 발자국 · ${visitedCities.size}개 지역`;
 }
 
 function renderTripTabs() {

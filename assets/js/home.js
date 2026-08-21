@@ -302,7 +302,7 @@ export async function renderHome({ footprints, trips, onSelectTrip }) {
   const plannedCityIds = new Set(plannedRecords.flatMap(record => record.cities));
 
   document.getElementById("home-domestic-count").textContent = `${footprints.records.filter(record => record.country === "KR" && record.startDate).length}번의 여행`;
-  document.getElementById("home-city-count").textContent = `${visitedCityIds.size}개 도시`;
+  document.getElementById("home-city-count").textContent = `${visitedCityIds.size}개 지역`;
   document.getElementById("home-overseas-count").textContent = `${footprints.records.filter(record => record.country !== "KR").length}번의 여행`;
   document.getElementById("domestic-record-count").textContent = `${domesticRecords.length}개 기록`;
   document.getElementById("overseas-record-count").textContent = `${overseasRecords.length}개 기록`;
@@ -339,7 +339,7 @@ export async function renderHome({ footprints, trips, onSelectTrip }) {
   const svg = mapHost.querySelector("svg");
   svg.removeAttribute("width");
   svg.removeAttribute("height");
-  svg.setAttribute("aria-label", "다녀온 도시가 표시된 대한민국 지도");
+  svg.setAttribute("aria-label", "다녀온 지역이 표시된 대한민국 지도");
   svg.setAttribute("role", "img");
   svg.querySelectorAll("path").forEach(path => path.classList.add("home-province-shape"));
 
