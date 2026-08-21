@@ -281,8 +281,9 @@ export async function renderHome({ footprints, trips, onSelectTrip }) {
   panel.hidden = false;
   const mapHost = document.getElementById("home-map");
   const list = document.getElementById("footprint-list");
-  const listTitle = document.getElementById("footprint-list-title");
-  const filterReset = document.getElementById("footprint-filter-reset");
+  const cityCard = document.getElementById("home-city-card");
+  const cityCardName = document.getElementById("home-city-card-name");
+  const cityCardRecords = document.getElementById("home-city-card-records");
   const citiesById = new Map(footprints.cities.map(city => [city.id, city]));
   const plannedRecords = trips.map(trip => ({
     id: `planned-${trip.id}`,
@@ -303,24 +304,30 @@ export async function renderHome({ footprints, trips, onSelectTrip }) {
   document.getElementById("home-domestic-count").textContent = `${footprints.records.filter(record => record.country === "KR" && record.startDate).length}번의 여행`;
   document.getElementById("home-city-count").textContent = `${visitedCityIds.size}개 도시`;
   document.getElementById("home-overseas-count").textContent = `${footprints.records.filter(record => record.country !== "KR").length}번의 여행`;
+  document.getElementById("domestic-record-count").textContent = `${domesticRecords.length}개 기록`;
+  document.getElementById("overseas-record-count").textContent = `${overseasRecords.length}개 기록`;
 
-  function showRecords(cityId) {
-    const city = cityId ? citiesById.get(cityId) : null;
-    listTitle.textContent = city ? `${city.name}의 발자국` : "국내 발자국";
-    filterReset.hidden = !city;
-    const records = city
-      ? domesticRecords.filter(record => record.cities.includes(cityId))
-      : domesticRecords;
-    list.replaceChildren(...sortRecords(records).map(record => createFootprintItem(record, onSelectTrip)));
+  function selectMapCity(cityId) {
+    const city = citiesById.get(cityId);
+    const records = domesticRecords.filter(record => record.cities.includes(cityId));
+    cityCardName.textContent = city.name;
+    cityCardRecords.replaceChildren(...sortRecords(records).map(record => createFootprintItem(record, onSelectTrip)));
+    cityCard.hidden = false;
     mapHost.querySelectorAll(".home-city-shape,.home-city-fill").forEach(path => {
-      path.classList.toggle("is-selected", Boolean(cityId) && path.dataset.city === cityId);
+      path.classList.toggle("is-selected", path.dataset.city === cityId);
     });
   }
 
-  filterReset.addEventListener("click", () => showRecords());
+  function closeCityCard() {
+    cityCard.hidden = true;
+    mapHost.querySelectorAll(".home-city-shape,.home-city-fill").forEach(path => path.classList.remove("is-selected"));
+  }
+
+  list.replaceChildren(...sortRecords(domesticRecords).map(record => createFootprintItem(record, onSelectTrip)));
   document.getElementById("overseas-footprint-list").replaceChildren(
     ...sortRecords(overseasRecords).map(record => createFootprintItem(record, onSelectTrip))
   );
+  document.getElementById("home-city-card-close").addEventListener("click", closeCityCard);
 
   const [mapResponse, overlayResponse] = await Promise.all([
     fetch(new URL("../maps/korea-provinces.svg", import.meta.url)),
@@ -340,15 +347,20 @@ export async function renderHome({ footprints, trips, onSelectTrip }) {
     if (!city.pathIds || (!visitedCityIds.has(city.id) && !plannedCityIds.has(city.id)))
       return;
     const paths = city.pathIds.map(id => svg.querySelector(`[id="${id}"]`)).filter(Boolean);
-    addCityInteraction(paths, city, showRecords, plannedCityIds.has(city.id) ? "planned" : "visited");
+    addCityInteraction(paths, city, selectMapCity, plannedCityIds.has(city.id) ? "planned" : "visited");
   });
-  appendCityOverlays(svg, await overlayResponse.json(), footprints.cities, visitedCityIds, plannedCityIds, showRecords);
+  appendCityOverlays(svg, await overlayResponse.json(), footprints.cities, visitedCityIds, plannedCityIds, selectMapCity);
   setupMapZoom(svg, mapHost);
 
   mapHost.addEventListener("click", event => {
+    const cityTarget = event.target.closest("[data-city]");
+    if (cityTarget) {
+      selectMapCity(cityTarget.dataset.city);
+      return;
+    }
     if (event.target === svg || event.target.closest("g")?.id === "전국_시도_경계")
-      showRecords();
+      closeCityCard();
   });
-  showRecords();
+  closeCityCard();
   panel.dataset.ready = "true";
 }

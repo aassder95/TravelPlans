@@ -57,15 +57,29 @@ h1 { margin:0; font-family:"Segoe UI Semibold","Segoe UI",sans-serif; font-size:
 .home-map-controls button { display:flex; align-items:center; justify-content:center; width:38px; height:38px; padding:0; border:1px solid var(--border); border-radius:6px; background:#191d20ed; color:var(--text-primary); font-size:20px; font-weight:700; box-shadow:0 3px 10px #0008; cursor:pointer; }
 .home-map-controls button:last-child { height:32px; font-size:10px; }
 .home-map-controls button:disabled { color:#66706d; cursor:default; }
+.home-city-card { position:absolute; z-index:6; right:9px; bottom:9px; left:9px; max-height:175px; overflow:auto; padding:10px 11px; border:1px solid var(--accent); border-radius:7px; background:#111517f2; box-shadow:0 5px 18px #000b; }
+.home-city-card[hidden] { display:none; }
+.home-city-card-heading { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.home-city-card-heading strong { color:var(--text-primary); font-size:15px; }
+.home-city-card-heading button { flex:0 0 auto; width:28px; height:28px; padding:0; border:0; border-radius:5px; background:var(--secondary); color:var(--text-muted); font-size:18px; cursor:pointer; }
+.home-city-card-records { margin-top:6px; border-top:1px solid var(--border); }
+.home-city-card .footprint-item { min-height:45px; padding:8px 1px; }
+.home-city-card .footprint-item:last-child { padding-bottom:1px; }
 .home-map-legend { display:flex; justify-content:center; gap:16px; margin-top:9px; color:var(--text-muted); font-size:10.5px; }
 .home-map-legend span { display:flex; align-items:center; gap:5px; }
 .home-map-legend i { width:12px; height:12px; border:1px solid; border-radius:3px; }
 .home-map-legend i.is-visited { border-color:#92d8b8; background:#2d8b68; }
 .home-map-legend i.is-planned { border-color:#f0c76e; background:#8b6b2d; }
 .home-map-hint { margin:8px 0 0; color:var(--text-muted); font-size:10.5px; text-align:center; }
-.footprint-list-heading { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:7px; }
-.footprint-list-heading button { min-height:30px; padding:4px 9px; border:1px solid var(--accent); border-radius:5px; background:var(--selection); color:var(--text-primary); font-size:10.5px; font-weight:700; cursor:pointer; }
-.footprint-list-heading button[hidden] { display:none; }
+.footprint-details { padding:0; overflow:hidden; }
+.footprint-details > summary { display:grid; grid-template-columns:minmax(0,1fr) auto auto; align-items:center; gap:8px; min-height:54px; padding:11px 12px; cursor:pointer; list-style:none; }
+.footprint-details > summary::-webkit-details-marker { display:none; }
+.footprint-details > summary strong { font-family:"Segoe UI Semibold","Segoe UI",sans-serif; font-size:17px; }
+.footprint-details > summary span { color:var(--text-muted); font-size:10.5px; }
+.footprint-details > summary::after { content:"펼쳐보기"; color:var(--focus); font-size:10.5px; font-weight:700; }
+.footprint-details[open] > summary { border-bottom:1px solid var(--border); background:var(--card-header-bg); }
+.footprint-details[open] > summary::after { content:"접기"; }
+.footprint-details > .footprint-list { padding:0 12px 8px; }
 .footprint-list { display:grid; }
 .footprint-item { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:3px 8px; min-height:51px; padding:9px 2px; border-top:1px solid var(--border); }
 .footprint-item:first-child { border-top:0; }
