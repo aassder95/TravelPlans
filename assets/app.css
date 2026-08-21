@@ -55,9 +55,9 @@ h1 { margin:0; font-family:"Segoe UI Semibold","Segoe UI",sans-serif; font-size:
 .home-map-region.is-selected .home-subregion-shape,.home-map-region.is-selected.home-province-shape { fill:#49ad83; stroke:#f2fff9; stroke-width:2; filter:drop-shadow(0 0 3px #72d9ac); }
 .home-map-region.is-city-region.is-visited { filter:drop-shadow(0 0 .8px #92d8b8); }
 .home-map-region.is-city-region.is-planned { filter:drop-shadow(0 0 .8px #f0c76e); }
-.home-map-region.is-city-region.is-selected { filter:drop-shadow(0 0 1.2px #f2fff9) drop-shadow(0 0 3px #72d9ac); }
+.home-map.is-city-detailed .home-map-region.is-city-region.is-selected { filter:drop-shadow(1px 0 #f2fff9) drop-shadow(-1px 0 #f2fff9) drop-shadow(0 1px #f2fff9) drop-shadow(0 -1px #f2fff9) drop-shadow(0 0 3px #72d9ac); }
 .home-map-region.is-city-region.is-visited .home-subregion-shape,.home-map-region.is-city-region.is-planned .home-subregion-shape { stroke:transparent; filter:none; }
-.home-map-region.is-city-region.is-selected .home-subregion-shape { fill:#49ad83; stroke:#f2fff9; stroke-width:2; filter:none; }
+.home-map-region.is-city-region.is-selected .home-subregion-shape { fill:#49ad83; stroke:transparent; filter:none; }
 .home-map-region:focus-visible .home-subregion-shape,.home-map-region.home-province-shape:focus-visible { stroke:#fff; stroke-width:3; }
 .home-map-controls { position:absolute; z-index:5; top:9px; right:9px; display:grid; gap:4px; }
 .home-map-controls button { display:flex; align-items:center; justify-content:center; width:38px; height:38px; padding:0; border:1px solid var(--border); border-radius:6px; background:#191d20ed; color:var(--text-primary); font-size:20px; font-weight:700; box-shadow:0 3px 10px #0008; cursor:pointer; }

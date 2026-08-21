@@ -9,4 +9,4 @@
 
 `city-overlays.json`은 홈 지도의 확대 단계에서 표시하는 전국 17개 시·도의 시·군·구 경계를 추출한 데이터입니다.
 
-지역별 SVG의 독립 좌표를 그대로 확대하지 않고, 각 지역의 실제 외곽 범위를 전국 SVG의 해당 도 외곽 범위에 맞춰 정렬합니다. 재생성은 `node scripts/align-map-overlays.mjs`를 사용합니다.
+지역별 SVG의 독립 좌표를 그대로 확대하지 않고, 같은 SGIS 원본 JSON을 기준으로 지역별 SVG와 전국 SVG의 투영 관계를 계산해 정렬합니다. 재생성은 `node scripts/align-map-overlays.mjs`를 사용합니다.

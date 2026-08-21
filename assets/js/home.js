@@ -177,62 +177,8 @@ function setupMapZoom(svg, mapHost) {
   let gesture;
   let dragged = false;
 
-  function distanceToSegmentSquared(pointX, pointY, start, end) {
-    const dx = end.x - start.x;
-    const dy = end.y - start.y;
-    if (dx === 0 && dy === 0)
-      return (pointX - start.x) ** 2 + (pointY - start.y) ** 2;
-    const ratio = Math.min(Math.max(((pointX - start.x) * dx + (pointY - start.y) * dy) / (dx * dx + dy * dy), 0), 1);
-    const nearestX = start.x + ratio * dx;
-    const nearestY = start.y + ratio * dy;
-    return (pointX - nearestX) ** 2 + (pointY - nearestY) ** 2;
-  }
-
-  function findNearestRegion(provinceId, clientX, clientY) {
-    let nearestRegion;
-    let nearestDistance = Infinity;
-    const regions = [...svg.querySelectorAll(".home-map-region[data-province]")]
-      .filter(region => region.dataset.province === provinceId);
-    regions.forEach(region => {
-      region.querySelectorAll(".home-subregion-shape").forEach(path => {
-        const matrix = path.getScreenCTM();
-        if (!matrix)
-          return;
-        const totalLength = path.getTotalLength();
-        const screenScale = Math.max(Math.hypot(matrix.a, matrix.b), Math.hypot(matrix.c, matrix.d), 0.001);
-        const step = Math.max(6, 14 / screenScale);
-        const firstSourcePoint = path.getPointAtLength(0);
-        let previous = new DOMPoint(firstSourcePoint.x, firstSourcePoint.y).matrixTransform(matrix);
-        for (let length = Math.min(step, totalLength);; length = Math.min(length + step, totalLength)) {
-          const sourcePoint = path.getPointAtLength(length);
-          const current = new DOMPoint(sourcePoint.x, sourcePoint.y).matrixTransform(matrix);
-          const segmentLengthSquared = (current.x - previous.x) ** 2 + (current.y - previous.y) ** 2;
-          const distance = segmentLengthSquared > 28 ** 2
-            ? Math.min(
-              (clientX - previous.x) ** 2 + (clientY - previous.y) ** 2,
-              (clientX - current.x) ** 2 + (clientY - current.y) ** 2
-            )
-            : distanceToSegmentSquared(clientX, clientY, previous, current);
-          if (distance < nearestDistance) {
-            nearestDistance = distance;
-            nearestRegion = region;
-          }
-          if (length === totalLength)
-            break;
-          previous = current;
-        }
-      });
-    });
-    return nearestRegion;
-  }
-
   function resolveTapTarget(event) {
-    const directTarget = event.target.closest(".home-map-region, .is-static-footprint");
-    if (directTarget || !mapHost.classList.contains("is-city-detailed"))
-      return directTarget;
-    if (!event.target.classList.contains("home-province-shape") || !event.target.id)
-      return undefined;
-    return findNearestRegion(event.target.id, event.clientX, event.clientY);
+    return event.target.closest(".home-map-region, .is-static-footprint");
   }
 
   function clampView() {
