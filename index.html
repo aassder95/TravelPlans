@@ -48,6 +48,10 @@ h1 { margin:0; font-family:"Segoe UI Semibold","Segoe UI",sans-serif; font-size:
 .day-tabs button.active::after { transform:scaleX(1); }
 .day-tabs small,.day-tabs span { display:block; overflow:hidden; font-size:10px; white-space:nowrap; text-overflow:ellipsis; }
 .day-tabs strong { display:block; margin:2px 0; font-size:15px; }
+.view-switch { display:grid; grid-template-columns:1fr 1fr; gap:4px; margin-top:8px; padding:3px; border:1px solid var(--border); border-radius:7px; background:var(--input-bg); }
+.view-switch button { min-height:36px; border:0; border-radius:5px; background:transparent; color:var(--text-muted); font-size:12px; font-weight:700; cursor:pointer; }
+.view-switch button.active { background:var(--selection); color:var(--text-primary); box-shadow:inset 0 0 0 1px var(--accent); }
+.view-panel[hidden] { display:none; }
 .card { margin-top:10px; padding:12px; background:var(--card-bg); border:1px solid var(--border); border-radius:8px; }
 .section-head { display:flex; align-items:flex-start; flex-direction:column; gap:12px; margin-bottom:12px; }
 .section-head h2 { margin:0; font-family:"Segoe UI Semibold","Segoe UI",sans-serif; font-size:20px; }
@@ -74,11 +78,17 @@ h1 { margin:0; font-family:"Segoe UI Semibold","Segoe UI",sans-serif; font-size:
 .map-caption { margin:7px 2px 0; color:var(--text-muted); font-size:10px; line-height:1.4; }
 .schedule-card .section-head { flex-direction:row; justify-content:space-between; align-items:flex-end; }
 .row-count { color:var(--text-muted); font-size:11px; white-space:nowrap; }
+.schedule-filter { position:sticky; top:0; z-index:5; display:grid; grid-template-columns:auto minmax(0,1fr); gap:6px; margin:0 -4px 10px; padding:5px; border:1px solid var(--border); border-radius:7px; background:#191d20f5; backdrop-filter:blur(8px); }
+.schedule-filter button,.schedule-filter select { min-width:0; min-height:36px; border:1px solid var(--border); border-radius:5px; background:var(--input-bg); color:var(--text-primary); font-size:11px; font-weight:600; }
+.schedule-filter button { padding:6px 10px; cursor:pointer; }
+.schedule-filter label { min-width:0; display:grid; grid-template-columns:auto minmax(0,1fr); align-items:center; gap:7px; padding-left:8px; color:var(--text-muted); font-size:10.5px; white-space:nowrap; }
+.schedule-filter select { width:100%; padding:6px 24px 6px 7px; }
 .table-wrap { border:0; }
 table,tbody { display:block; width:100%; }
 thead { display:none; }
 tbody { display:grid; gap:7px; }
 tbody tr { display:block; padding:11px 12px; border:1px solid var(--border); border-radius:6px; background:var(--input-bg); }
+tbody tr.movement-row { padding:3px 8px; border:0; background:transparent; }
 .schedule-item { display:block; padding:0; border:0; background:transparent; overflow-wrap:anywhere; }
 .schedule-time { display:block; margin-bottom:5px; color:var(--focus); font-size:11px; font-weight:700; }
 .schedule-place { display:block; color:var(--text-primary); font-size:15px; font-weight:700; line-height:1.4; }
@@ -90,6 +100,10 @@ tbody tr { display:block; padding:11px 12px; border:1px solid var(--border); bor
 .traveler-route { display:block; color:var(--text-primary); font-size:12.5px; font-weight:700; line-height:1.5; }
 .traveler-note { display:block; margin-top:2px; color:var(--text-muted); font-size:11px; line-height:1.4; }
 .travel-meeting { padding:9px 10px; border-left:3px solid var(--focus); background:var(--secondary); color:var(--text-primary); font-size:12px; font-weight:700; }
+.movement-line { display:grid; grid-template-columns:18px minmax(0,1fr); gap:5px; align-items:center; color:var(--text-muted); }
+.movement-arrow { color:var(--focus); font-size:18px; font-weight:700; line-height:1; text-align:center; }
+.movement-summary { display:block; color:var(--text-primary); font-size:11.5px; font-weight:700; line-height:1.4; }
+.movement-route { display:block; margin-top:1px; color:var(--text-muted); font-size:10.5px; line-height:1.4; }
 .candidate-details { margin-top:6px; border-top:1px solid var(--border); }
 .candidate-details summary { display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:44px; color:var(--text-primary); font-size:13px; font-weight:700; cursor:pointer; list-style:none; }
 .candidate-details summary::-webkit-details-marker { display:none; }
@@ -108,7 +122,8 @@ footer strong { color:var(--text-primary); }
   .hero,.page { box-shadow:0 0 30px #0007; }
 }
 @media print {
-  .trip-tabs,.day-tabs,.route-range { display:none; }
+  .trip-tabs,.day-tabs,.view-switch,.route-range,.schedule-filter { display:none; }
+  .view-panel { display:block!important; }
   .card { break-inside:avoid; }
 }
   </style>
@@ -124,8 +139,12 @@ footer strong { color:var(--text-primary); }
   <main class="page">
     <nav class="trip-tabs" aria-label="여행 선택"></nav>
     <nav class="day-tabs" aria-label="여행 날짜 선택"></nav>
+    <div class="view-switch" role="tablist" aria-label="여행 정보 보기">
+      <button type="button" id="view-schedule" role="tab" aria-controls="schedule-panel">일정</button>
+      <button type="button" id="view-map" role="tab" aria-controls="map-panel">지도</button>
+    </div>
 
-    <section class="card route-card">
+    <section class="card route-card view-panel" id="map-panel" role="tabpanel" aria-labelledby="view-map">
       <div class="section-head">
         <div class="route-heading">
           <div><p class="section-label" id="day-number"></p><h2 id="route-title"></h2></div>
@@ -149,10 +168,14 @@ footer strong { color:var(--text-primary); }
       <p class="map-caption" id="route-status">실제 도로 경로를 불러오는 중...</p>
     </section>
 
-    <section class="card schedule-card">
+    <section class="card schedule-card view-panel" id="schedule-panel" role="tabpanel" aria-labelledby="view-schedule">
       <div class="section-head">
         <div><p class="section-label">TIMETABLE</p><h2 id="schedule-title"></h2></div>
         <span class="row-count" id="row-count"></span>
+      </div>
+      <div class="schedule-filter">
+        <button type="button" id="schedule-all">전체 일정</button>
+        <label>현재 코스부터 <select id="current-course"></select></label>
       </div>
       <div class="table-wrap">
         <table>
@@ -247,8 +270,10 @@ const map = L.map("route-map", { zoomControl: true });
 const routeLayers = L.layerGroup().addTo(map);
 const routeStart = document.getElementById("route-start");
 const routeEnd = document.getElementById("route-end");
+const currentCourse = document.getElementById("current-course");
 let routeRequestId = 0;
 let activePlan;
+let activeView = "schedule";
 const roadRouteCache = new Map();
 const dayDistanceCache = new Map();
 
@@ -499,6 +524,16 @@ function selectedScheduleRows(plan, startIdx, endIdx) {
   return plan.rows.slice(startRowIdx, endRowIdx + 1);
 }
 
+function durationText(time) {
+  const match = time.match(/^(\d{1,2}):(\d{2})~(\d{1,2}):(\d{2})$/);
+  if (!match)
+    return "";
+  const [, startHour, startMinute, endHour, endMinute] = match.map(Number);
+  let minutes = endHour * 60 + endMinute - (startHour * 60 + startMinute);
+  if (minutes < 0) minutes += 24 * 60;
+  return `${minutes}분`;
+}
+
 function renderSchedule(plan, startIdx, endIdx) {
   const rows = selectedScheduleRows(plan, startIdx, endIdx);
   const isFullRoute = startIdx === 0 && endIdx === plan.points.length - 1;
@@ -512,8 +547,32 @@ function renderSchedule(plan, startIdx, endIdx) {
     const td = document.createElement("td");
     const timeText = document.createElement("span");
     const placeText = document.createElement("strong");
+    const isMovement = activity.startsWith("이동");
     td.className = "schedule-item";
     td.colSpan = 5;
+    if (isMovement) {
+      const line = document.createElement("div");
+      const arrow = document.createElement("span");
+      const content = document.createElement("div");
+      const summary = document.createElement("strong");
+      const route = document.createElement("span");
+      const extraActivity = activity.replace(/^이동·?/, "");
+      const summaryParts = [note, extraActivity, durationText(time)].filter(Boolean);
+      tr.className = "movement-row";
+      line.className = "movement-line";
+      arrow.className = "movement-arrow";
+      arrow.textContent = "↓";
+      summary.className = "movement-summary";
+      summary.textContent = summaryParts.join(" · ");
+      route.className = "movement-route";
+      route.textContent = `${time} · ${origin} → ${dest}`;
+      content.append(summary, route);
+      line.append(arrow, content);
+      td.append(line);
+      tr.append(td);
+      body.append(tr);
+      return;
+    }
     timeText.className = "schedule-time";
     timeText.textContent = time;
     placeText.className = "schedule-place";
@@ -595,6 +654,7 @@ function renderSchedule(plan, startIdx, endIdx) {
 function drawSelectedRoute() {
   const startIdx = Number(routeStart.value);
   const endIdx = Number(routeEnd.value);
+  currentCourse.value = String(startIdx);
   document.getElementById("route-summary").textContent = selectedRouteSummary(activePlan, startIdx, endIdx);
   renderSchedule(activePlan, startIdx, endIdx);
   drawMap(activePlan, startIdx, endIdx);
@@ -614,14 +674,41 @@ function fillEndOptions(startIdx, selectedEndIdx) {
 function fillRouteOptions(plan) {
   activePlan = plan;
   routeStart.replaceChildren();
+  currentCourse.replaceChildren();
   plan.points.slice(0, -1).forEach(([name], idx) => {
     const option = document.createElement("option");
     option.value = idx;
     option.textContent = `${idx + 1}. ${name}`;
     routeStart.append(option);
+    currentCourse.append(option.cloneNode(true));
   });
   routeStart.value = 0;
+  currentCourse.value = 0;
   fillEndOptions(0, plan.points.length - 1);
+}
+
+function showAllSchedule() {
+  routeStart.value = 0;
+  currentCourse.value = 0;
+  fillEndOptions(0, activePlan.points.length - 1);
+  drawSelectedRoute();
+}
+
+function setActiveView(view) {
+  activeView = view;
+  const isSchedule = view === "schedule";
+  document.getElementById("schedule-panel").hidden = !isSchedule;
+  document.getElementById("map-panel").hidden = isSchedule;
+  document.getElementById("view-schedule").classList.toggle("active", isSchedule);
+  document.getElementById("view-map").classList.toggle("active", !isSchedule);
+  document.getElementById("view-schedule").setAttribute("aria-selected", isSchedule);
+  document.getElementById("view-map").setAttribute("aria-selected", !isSchedule);
+  if (!isSchedule) {
+    setTimeout(() => {
+      map.invalidateSize();
+      drawSelectedRoute();
+    }, 0);
+  }
 }
 
 function selectDay(key) {
@@ -686,13 +773,18 @@ routeStart.addEventListener("change", () => {
   drawSelectedRoute();
 });
 routeEnd.addEventListener("change", drawSelectedRoute);
-document.getElementById("route-all").addEventListener("click", () => {
-  routeStart.value = 0;
-  fillEndOptions(0, activePlan.points.length - 1);
+currentCourse.addEventListener("change", () => {
+  routeStart.value = currentCourse.value;
+  fillEndOptions(Number(currentCourse.value), activePlan.points.length - 1);
   drawSelectedRoute();
 });
+document.getElementById("route-all").addEventListener("click", showAllSchedule);
+document.getElementById("schedule-all").addEventListener("click", showAllSchedule);
+document.getElementById("view-schedule").addEventListener("click", () => setActiveView("schedule"));
+document.getElementById("view-map").addEventListener("click", () => setActiveView("map"));
 
 selectTrip(trips[0].id);
+setActiveView(activeView);
   </script>
 </body>
 </html>
