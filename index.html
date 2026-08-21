@@ -24,6 +24,37 @@
   <main class="page">
     <p id="app-status" class="app-status" role="status">여행 정보를 불러오는 중…</p>
     <nav class="trip-tabs" aria-label="여행 선택"></nav>
+    <section class="home-panel" id="home-panel" hidden>
+      <section class="card footprint-map-card">
+        <div class="home-heading">
+          <div><p class="section-label">OUR FOOTPRINTS</p><h2>함께 다녀온 도시</h2></div>
+          <span id="home-city-count"></span>
+        </div>
+        <div class="footprint-stats" aria-label="발자국 요약">
+          <span><small>국내</small><strong id="home-domestic-count"></strong></span>
+          <span><small>해외</small><strong id="home-overseas-count"></strong></span>
+        </div>
+        <div id="home-map" class="home-map" aria-live="polite"></div>
+        <div class="home-map-legend" aria-label="지도 범례">
+          <span><i class="is-visited"></i>발자국</span>
+          <span><i class="is-planned"></i>여행 예정</span>
+        </div>
+        <p class="home-map-hint">색칠된 도시를 누르면 그곳의 기록만 볼 수 있어요.</p>
+      </section>
+
+      <section class="card footprint-list-card">
+        <div class="footprint-list-heading">
+          <h2 id="footprint-list-title">국내 발자국</h2>
+          <button type="button" id="footprint-filter-reset" hidden>전체 보기</button>
+        </div>
+        <div class="footprint-list" id="footprint-list"></div>
+      </section>
+
+      <section class="card footprint-list-card">
+        <div class="footprint-list-heading"><h2>해외 발자국</h2></div>
+        <div class="footprint-list" id="overseas-footprint-list"></div>
+      </section>
+    </section>
     <nav class="day-tabs" aria-label="여행 날짜 선택"></nav>
     <section class="card day-overview" aria-label="선택한 날짜와 동선 범위">
       <div class="route-heading">

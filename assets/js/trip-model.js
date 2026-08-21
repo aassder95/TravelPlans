@@ -31,6 +31,10 @@ export function validateTrip(trip, expectedId = trip?.id) {
   assert(isText(trip.tab), `${expectedId}.tab이 필요합니다.`);
   assert(isText(trip.region), `${expectedId}.region이 필요합니다.`);
   assert(isText(trip.dateRange), `${expectedId}.dateRange가 필요합니다.`);
+  assert(/^\d{4}-\d{2}-\d{2}$/.test(trip.startDate), `${expectedId}.startDate 형식이 올바르지 않습니다.`);
+  assert(/^\d{4}-\d{2}-\d{2}$/.test(trip.endDate), `${expectedId}.endDate 형식이 올바르지 않습니다.`);
+  assert(trip.startDate <= trip.endDate, `${expectedId}의 여행 날짜 범위가 올바르지 않습니다.`);
+  assert(Array.isArray(trip.footprintCities) && trip.footprintCities.every(isText), `${expectedId}.footprintCities가 필요합니다.`);
   assert(isText(trip.color), `${expectedId}.color가 필요합니다.`);
   assert(Array.isArray(trip.days) && trip.days.length > 0, `${expectedId}.days가 비어 있습니다.`);
 
@@ -41,6 +45,43 @@ export function validateTrip(trip, expectedId = trip?.id) {
     dates.add(plan.isoDate);
   });
   return trip;
+}
+
+export function validateFootprints(data) {
+  assert(data?.version === 1, "지원하지 않는 발자국 데이터 버전입니다.");
+  assert(Array.isArray(data.records), "발자국 records가 필요합니다.");
+  assert(Array.isArray(data.cities), "발자국 cities가 필요합니다.");
+
+  const cityIds = new Set();
+  data.cities.forEach((city, index) => {
+    const path = `cities[${index}]`;
+    assert(isText(city?.id), `${path}.id가 필요합니다.`);
+    assert(isText(city?.name), `${path}.name이 필요합니다.`);
+    assert(!cityIds.has(city.id), `중복된 도시 id입니다: ${city.id}`);
+    cityIds.add(city.id);
+  });
+
+  const recordIds = new Set();
+  data.records.forEach((record, index) => {
+    const path = `records[${index}]`;
+    assert(isText(record?.id), `${path}.id가 필요합니다.`);
+    assert(isText(record?.label), `${path}.label이 필요합니다.`);
+    assert(record.country === "KR" || record.country === "JP", `${path}.country가 올바르지 않습니다.`);
+    assert(Array.isArray(record.cities) && record.cities.length > 0, `${path}.cities가 비어 있습니다.`);
+    record.cities.forEach(cityId => assert(cityIds.has(cityId), `${path}가 없는 도시를 참조합니다: ${cityId}`));
+    assert(!recordIds.has(record.id), `중복된 발자국 id입니다: ${record.id}`);
+    recordIds.add(record.id);
+
+    const hasStart = isText(record.startDate);
+    const hasEnd = isText(record.endDate);
+    assert(hasStart === hasEnd, `${path}의 시작일과 종료일은 함께 작성해야 합니다.`);
+    if (hasStart) {
+      assert(/^\d{4}-\d{2}-\d{2}$/.test(record.startDate), `${path}.startDate 형식이 올바르지 않습니다.`);
+      assert(/^\d{4}-\d{2}-\d{2}$/.test(record.endDate), `${path}.endDate 형식이 올바르지 않습니다.`);
+      assert(record.startDate <= record.endDate, `${path}의 날짜 범위가 올바르지 않습니다.`);
+    }
+  });
+  return data;
 }
 
 function validateDay(plan, path) {

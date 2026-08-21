@@ -61,14 +61,19 @@
 ## 웹페이지 구조
 
 - 모든 여행은 하나의 `index.html`에서 보여 주며 여행별 HTML 페이지를 만들지 않는다.
+- 첫 화면은 홈 탭으로 표시하고, 대한민국 지도에서 다녀온 도시와 일정이 등록된 예정 도시를 구분해 색칠한다.
+- 발자국의 지역 단위는 시 단위로 관리한다. 광역시는 광역시 전체, 일반시는 해당 시 경계를 사용하며 도 단위로 뭉뚱그리지 않는다.
+- 과거 여행과 자주 가는 지역은 모두 발자국에 포함한다. 날짜가 확인된 여행만 기간을 표시하고, 서울·수원·안양·화성처럼 기간 없는 기록은 날짜 영역을 비워 둔다.
+- 과거 발자국에는 빈 일정 페이지나 일정 보기 버튼을 만들지 않는다. 상세 일정 데이터가 있는 여행만 홈에서 일정 탭으로 이동할 수 있다.
+- 국내 지도에 포함되지 않는 해외 발자국은 홈의 해외 목록에 별도로 표시한다.
 - 새 여행은 `data/trips/` 아래의 독립 JSON 파일로 추가하고 `data/trips.json` 매니페스트에 등록한다.
-- 여행 JSON은 스키마 버전 `2`의 `version`, `id`, `tab`, `region`, `dateRange`, `color`, `days` 구조를 유지하고 매니페스트의 `id`와 파일 내부의 `id`를 일치시킨다.
+- 여행 JSON은 스키마 버전 `2`의 `version`, `id`, `tab`, `region`, `dateRange`, `startDate`, `endDate`, `footprintCities`, `color`, `days` 구조를 유지하고 매니페스트의 `id`와 파일 내부의 `id`를 일치시킨다.
 - `region`은 네이버지도 검색에 사용하는 지역명이며, `days`는 실제 여행 날짜 순서의 배열로 작성하고 `isoDate`를 중복하지 않는다.
 - 날짜별 방문 장소는 `visits`의 객체로 작성하고 하루 안에서 고유한 `id`를 부여한다. 같은 장소를 재방문해도 서로 다른 방문 `id`를 사용한다.
 - 이동 경로의 `segments[].visits`와 거리 대안의 `distanceRoutes`는 배열 위치가 아니라 방문·구간 `id`를 참조한다.
 - 일정의 `rows`는 위치 기반 배열이 아닌 `time`, `type`, `from`, `to`, `activity`, `note` 등의 이름 있는 속성을 사용한다.
 - 지도 방문 장소와 일정 카드는 장소명 추측으로 연결하지 않고 일정의 `visitIds`로 명시적으로 연결한다. 모든 방문 `id`는 최소 한 일정에 연결한다.
-- 공통 화면은 `index.html`, 스타일은 `assets/app.css`, 앱 조립은 `assets/js/app.js`, 데이터 로딩은 `assets/js/data-loader.js`, 데이터 검증과 조회는 `assets/js/trip-model.js`, 저장 상태는 `assets/js/ui-state.js`, 일정 카드는 `assets/js/schedule.js`, 지도와 경로는 `assets/js/map.js`가 담당한다.
+- 공통 화면은 `index.html`, 스타일은 `assets/app.css`, 앱 조립은 `assets/js/app.js`, 홈 발자국은 `assets/js/home.js`, 데이터 로딩은 `assets/js/data-loader.js`, 데이터 검증과 조회는 `assets/js/trip-model.js`, 저장 상태는 `assets/js/ui-state.js`, 일정 카드는 `assets/js/schedule.js`, 지도와 경로는 `assets/js/map.js`가 담당한다.
 - 여행별 기능을 복사하지 않고 공통 모듈을 재사용하며, 여행 추가만으로 공통 JavaScript를 수정하지 않는다.
 - 여행 탭 아래에 해당 여행의 날짜별 탭을 표시한다.
 - 전체 제목은 `똥뚜 여행계획`을 유지하고, 여행 탭과 중복되는 시작일·종료일은 상단에 다시 표시하지 않는다.

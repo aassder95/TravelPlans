@@ -24,12 +24,26 @@
   "tab": "26.12.25~26.12.27/부산",
   "region": "부산",
   "dateRange": "2026.12.25 ~ 2026.12.27",
+  "startDate": "2026-12-25",
+  "endDate": "2026-12-27",
+  "footprintCities": ["busan"],
   "color": "#206c4c",
   "days": []
 }
 ```
 
-`region`은 네이버지도 검색어 앞에 붙는 지역명입니다. `days`는 실제 여행 날짜 순서대로 넣고 각 날짜의 `isoDate`는 중복하지 않습니다.
+`region`은 네이버지도 검색어 앞에 붙는 지역명입니다. `startDate`와 `endDate`는 홈의 예정 여행 기간이며, `footprintCities`는 `data/footprints.json`의 도시 id를 사용합니다. `days`는 실제 여행 날짜 순서대로 넣고 각 날짜의 `isoDate`는 중복하지 않습니다.
+
+일정이 필요 없는 과거 여행과 자주 가는 곳은 여행 JSON을 만들지 않고 `data/footprints.json`의 `records`에 추가합니다. 날짜가 확인된 여행은 시작일·종료일을 함께 쓰고, 기간 없이 계속 찾는 도시는 날짜를 생략합니다.
+
+```json
+{
+  "id": "suwon-frequent",
+  "label": "수원",
+  "country": "KR",
+  "cities": ["suwon"]
+}
+```
 
 ## 3. 날짜별 방문 장소
 

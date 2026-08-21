@@ -1,0 +1,90 @@
+{
+  "version": 1,
+  "records": [
+    {
+      "id": "busan-2025-12",
+      "label": "부산",
+      "startDate": "2025-12-25",
+      "endDate": "2025-12-27",
+      "country": "KR",
+      "cities": ["busan"]
+    },
+    {
+      "id": "ulsan-busan-2025-08",
+      "label": "울산·부산",
+      "startDate": "2025-08-29",
+      "endDate": "2025-08-31",
+      "country": "KR",
+      "cities": ["ulsan", "busan"]
+    },
+    {
+      "id": "fukuoka-2026-05",
+      "label": "후쿠오카",
+      "startDate": "2026-05-09",
+      "endDate": "2026-05-12",
+      "country": "JP",
+      "cities": ["fukuoka"]
+    },
+    {
+      "id": "incheon-2026-07",
+      "label": "인천",
+      "startDate": "2026-07-17",
+      "endDate": "2026-07-19",
+      "country": "KR",
+      "cities": ["incheon"]
+    },
+    {
+      "id": "daejeon-jeonju-2026-02",
+      "label": "대전·전주",
+      "startDate": "2026-02-20",
+      "endDate": "2026-02-21",
+      "country": "KR",
+      "cities": ["daejeon", "jeonju"]
+    },
+    {
+      "id": "jeonju-2025-08",
+      "label": "전주",
+      "startDate": "2025-08-16",
+      "endDate": "2025-08-17",
+      "country": "KR",
+      "cities": ["jeonju"]
+    },
+    {
+      "id": "seoul-frequent",
+      "label": "서울",
+      "country": "KR",
+      "cities": ["seoul"]
+    },
+    {
+      "id": "suwon-frequent",
+      "label": "수원",
+      "country": "KR",
+      "cities": ["suwon"]
+    },
+    {
+      "id": "anyang-frequent",
+      "label": "안양",
+      "country": "KR",
+      "cities": ["anyang"]
+    },
+    {
+      "id": "hwaseong-frequent",
+      "label": "화성",
+      "country": "KR",
+      "cities": ["hwaseong"]
+    }
+  ],
+  "cities": [
+    { "id": "seoul", "name": "서울", "provinceId": "서울특별시", "pathIds": ["서울특별시"] },
+    { "id": "busan", "name": "부산", "provinceId": "부산광역시", "pathIds": ["부산광역시"] },
+    { "id": "incheon", "name": "인천", "provinceId": "인천광역시", "pathIds": ["인천광역시"] },
+    { "id": "daejeon", "name": "대전", "provinceId": "대전광역시", "pathIds": ["대전광역시"] },
+    { "id": "ulsan", "name": "울산", "provinceId": "울산광역시", "pathIds": ["울산광역시"] },
+    { "id": "suwon", "name": "수원", "provinceId": "경기도", "overlayId": "suwon" },
+    { "id": "anyang", "name": "안양", "provinceId": "경기도", "overlayId": "anyang" },
+    { "id": "hwaseong", "name": "화성", "provinceId": "경기도", "overlayId": "hwaseong" },
+    { "id": "jeonju", "name": "전주", "provinceId": "전라북도", "overlayId": "jeonju" },
+    { "id": "yeosu", "name": "여수", "provinceId": "전라남도", "overlayId": "yeosu" },
+    { "id": "fukuoka", "name": "후쿠오카" }
+  ]
+}

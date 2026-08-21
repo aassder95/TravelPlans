@@ -10,7 +10,8 @@ import {
   formatDistance,
   invalidateMapSize
 } from "./map.js";
-import { loadTrips } from "./data-loader.js";
+import { loadFootprints, loadTrips } from "./data-loader.js";
+import { renderHome } from "./home.js";
 import { loadUiState, saveUiState as persistUiState } from "./ui-state.js";
 
 const tripTabs = document.querySelector(".trip-tabs");
@@ -28,19 +29,23 @@ let activeTrip;
 let activePlan;
 let activeDayKey;
 let activeView = "schedule";
+let pageMode = "home";
+let footprints;
+let savedUiState;
 let feedbackTimer;
 let isRestoringUiState = true;
 
 function saveUiState() {
-  if (isRestoringUiState || !activeTrip || !activePlan || !activeDayKey)
+  if (isRestoringUiState || pageMode !== "trip" || !activeTrip || !activePlan || !activeDayKey)
     return;
-  persistUiState({
+  savedUiState = {
     tripId: activeTrip.id,
     dayKey: activeDayKey,
     view: activeView,
     startIdx: Number(routeStart.value),
     endIdx: Number(routeEnd.value)
-  });
+  };
+  persistUiState(savedUiState);
 }
 
 function refreshDayDistance(plan) {
@@ -107,6 +112,10 @@ function drawSelectedRoute() {
 }
 
 function updateRouteActions(now = new Date()) {
+  if (!activeTrip || !activePlan) {
+    routeActions.hidden = true;
+    return;
+  }
   const todayKey = localDateKey(now);
   const isTripDay = activeTrip.days.some(plan => plan.isoDate === todayKey);
   const isActiveDayToday = activePlan.isoDate === todayKey;
@@ -178,6 +187,8 @@ function focusCurrentSchedule() {
 }
 
 function setActiveView(view) {
+  if (pageMode !== "trip")
+    return;
   activeView = view;
   const isSchedule = view === "schedule";
   const isMap = view === "map";
@@ -235,25 +246,67 @@ function renderDayTabs(preferredDayKey) {
 }
 
 function selectTrip(id, preferredDayKey) {
+  pageMode = "trip";
   activeTrip = trips.find(trip => trip.id === id) ?? trips[0];
   document.querySelectorAll(".trip-tabs button").forEach(button => {
     const active = button.dataset.trip === activeTrip.id;
     button.classList.toggle("active", active);
     button.setAttribute("aria-pressed", active);
   });
+  document.getElementById("home-panel").hidden = true;
+  dayTabs.hidden = false;
+  document.querySelector(".day-overview").hidden = false;
+  document.querySelector(".view-switch").hidden = false;
   renderDayTabs(preferredDayKey);
+  if (savedUiState?.tripId === activeTrip.id && savedUiState?.dayKey === activeDayKey) {
+    const lastPointIndex = activePlan.visits.length - 1;
+    const startIdx = Math.min(Math.max(Number(savedUiState.startIdx) || 0, 0), lastPointIndex - 1);
+    const endIdx = Math.min(Math.max(Number(savedUiState.endIdx) || lastPointIndex, startIdx + 1), lastPointIndex);
+    routeStart.value = startIdx;
+    fillEndOptions(startIdx, endIdx);
+    drawSelectedRoute();
+  }
   refreshTripDistance(activeTrip);
+  setActiveView(savedUiState?.tripId === activeTrip.id && savedUiState?.view === "map" ? "map" : "schedule");
+}
+
+function showHome() {
+  pageMode = "home";
+  document.documentElement.style.setProperty("--accent", "#2d8b68");
+  document.querySelectorAll(".trip-tabs button").forEach(button => {
+    const active = button.dataset.page === "home";
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", active);
+  });
+  document.getElementById("home-panel").hidden = false;
+  dayTabs.hidden = true;
+  document.querySelector(".day-overview").hidden = true;
+  document.querySelector(".view-switch").hidden = true;
+  document.getElementById("map-panel").hidden = true;
+  document.getElementById("schedule-panel").hidden = true;
+  todayBrief.hidden = true;
+  const visitedCities = new Set(footprints.records.filter(record => record.country === "KR").flatMap(record => record.cities));
+  document.getElementById("trip-distance").textContent = `함께한 발자국 · ${visitedCities.size}개 도시`;
 }
 
 function renderTripTabs() {
   tripTabs.replaceChildren();
+  const homeButton = document.createElement("button");
+  homeButton.type = "button";
+  homeButton.dataset.page = "home";
+  homeButton.textContent = "홈";
+  homeButton.addEventListener("click", showHome);
+  tripTabs.append(homeButton);
   trips.forEach(trip => {
     const button = document.createElement("button");
     button.type = "button";
     button.dataset.trip = trip.id;
     button.textContent = trip.tab;
     button.style.setProperty("--trip-color", trip.color);
-    button.addEventListener("click", () => selectTrip(trip.id));
+    button.addEventListener("click", () => {
+      const preferredDay = savedUiState?.tripId === trip.id ? savedUiState.dayKey : undefined;
+      selectTrip(trip.id, preferredDay);
+    });
     tripTabs.append(button);
   });
 }
@@ -295,27 +348,14 @@ function showLoadError(error) {
 
 async function initialize() {
   try {
-    trips = await loadTrips();
+    [trips, footprints] = await Promise.all([loadTrips(), loadFootprints()]);
     appStatus.hidden = true;
     renderTripTabs();
     bindEvents();
-
-    const savedUiState = loadUiState();
-    const initialTrip = trips.find(trip => trip.id === savedUiState?.tripId) ?? trips[0];
-    selectTrip(initialTrip.id, savedUiState?.dayKey);
-
-    if (savedUiState?.tripId === activeTrip.id && savedUiState?.dayKey === activeDayKey) {
-      const lastPointIndex = activePlan.visits.length - 1;
-      const startIdx = Math.min(Math.max(Number(savedUiState.startIdx) || 0, 0), lastPointIndex - 1);
-      const endIdx = Math.min(Math.max(Number(savedUiState.endIdx) || lastPointIndex, startIdx + 1), lastPointIndex);
-      routeStart.value = startIdx;
-      fillEndOptions(startIdx, endIdx);
-      drawSelectedRoute();
-    }
-
-    setActiveView(savedUiState?.view === "map" ? "map" : "schedule");
+    savedUiState = loadUiState();
+    await renderHome({ footprints, trips, onSelectTrip: tripId => selectTrip(tripId) });
+    showHome();
     isRestoringUiState = false;
-    saveUiState();
   } catch (error) {
     showLoadError(error);
   }

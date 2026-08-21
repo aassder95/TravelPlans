@@ -4,6 +4,9 @@
   "tab": "26.09.05~26.09.07/여수",
   "region": "여수",
   "dateRange": "2026.09.05 ~ 2026.09.07",
+  "startDate": "2026-09-05",
+  "endDate": "2026-09-07",
+  "footprintCities": ["yeosu"],
   "color": "#206c4c",
   "days": [
     {

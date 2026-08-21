@@ -1,4 +1,4 @@
-import { validateManifest, validateTrip } from "./trip-model.js";
+import { validateFootprints, validateManifest, validateTrip } from "./trip-model.js";
 
 export async function loadTrips() {
   const manifestUrl = new URL("../../data/trips.json", import.meta.url);
@@ -18,4 +18,12 @@ export async function loadTrips() {
       days: trip.days.map(plan => ({ ...plan, region: trip.region }))
     };
   }));
+}
+
+export async function loadFootprints() {
+  const url = new URL("../../data/footprints.json", import.meta.url);
+  const response = await fetch(url, { cache: "no-store" });
+  if (!response.ok)
+    throw new Error(`발자국을 불러오지 못했습니다. (HTTP ${response.status})`);
+  return validateFootprints(await response.json());
 }
