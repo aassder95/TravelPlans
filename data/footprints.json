@@ -50,19 +50,52 @@
       "cities": ["jeonju"]
     },
     {
-      "id": "seoul-frequent",
-      "label": "서울",
+      "id": "seoul-jongno-frequent",
+      "label": "서울 종로구",
       "country": "KR",
-      "cities": [
-        "seoul-jongno",
-        "seoul-jung",
-        "seoul-songpa",
-        "seoul-seongdong",
-        "seoul-mapo",
-        "seoul-gangnam",
-        "seoul-geumcheon",
-        "seoul-yongsan"
-      ]
+      "cities": ["seoul-jongno"]
+    },
+    {
+      "id": "seoul-jung-frequent",
+      "label": "서울 중구",
+      "country": "KR",
+      "cities": ["seoul-jung"]
+    },
+    {
+      "id": "seoul-songpa-frequent",
+      "label": "서울 송파구",
+      "country": "KR",
+      "cities": ["seoul-songpa"]
+    },
+    {
+      "id": "seoul-seongdong-frequent",
+      "label": "서울 성동구",
+      "country": "KR",
+      "cities": ["seoul-seongdong"]
+    },
+    {
+      "id": "seoul-mapo-frequent",
+      "label": "서울 마포구",
+      "country": "KR",
+      "cities": ["seoul-mapo"]
+    },
+    {
+      "id": "seoul-gangnam-frequent",
+      "label": "서울 강남구",
+      "country": "KR",
+      "cities": ["seoul-gangnam"]
+    },
+    {
+      "id": "seoul-geumcheon-frequent",
+      "label": "서울 금천구",
+      "country": "KR",
+      "cities": ["seoul-geumcheon"]
+    },
+    {
+      "id": "seoul-yongsan-frequent",
+      "label": "서울 용산구",
+      "country": "KR",
+      "cities": ["seoul-yongsan"]
     },
     {
       "id": "gwacheon-frequent",

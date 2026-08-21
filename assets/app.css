@@ -42,7 +42,9 @@ h1 { margin:0; font-family:"Segoe UI Semibold","Segoe UI",sans-serif; font-size:
 .home-province-shape { fill:#293033; stroke:#687275; stroke-width:1.1; vector-effect:non-scaling-stroke; transition:fill .15s,stroke .15s,filter .15s; }
 .home-city-overlay-source { pointer-events:auto; }
 .home-subregion-shape { fill:transparent; stroke:transparent; pointer-events:all; vector-effect:non-scaling-stroke; transition:fill .15s,stroke .15s; }
-.home-map-region { pointer-events:auto; cursor:pointer; outline:none; }
+.home-map-region { pointer-events:auto; outline:none; }
+.home-map-region:not(.is-static-footprint) { cursor:pointer; }
+.home-map-region.is-static-footprint { cursor:default; }
 .home-map-region.is-visited .home-subregion-shape,.home-map-region.is-visited.home-province-shape { fill:#2d8b68; stroke:#92d8b8; stroke-width:1.35; }
 .home-map-region.is-planned .home-subregion-shape,.home-map-region.is-planned.home-province-shape { fill:#8b6b2d; stroke:#f0c76e; stroke-width:1.5; stroke-dasharray:3 2; }
 .home-map.is-city-detailed .home-map-region.is-city-region { filter:drop-shadow(0 0 .65px #778184); }

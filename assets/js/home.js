@@ -52,7 +52,7 @@ function provinceCityName(provinceId) {
   return provinceId.replace(/(?:특별자치시|광역시)$/, "");
 }
 
-function appendRegionOverlays(svg, overlayData, cities, visitedCityIds, plannedCityIds, regions, selectRegion) {
+function appendRegionOverlays(svg, overlayData, cities, visitedCityIds, plannedCityIds, interactiveCityIds, regions, selectRegion) {
   let definitions = svg.querySelector("defs");
   if (!definitions) {
     definitions = document.createElementNS(svgNamespace, "defs");
@@ -72,11 +72,16 @@ function appendRegionOverlays(svg, overlayData, cities, visitedCityIds, plannedC
         name: footprintCity?.name ?? provinceCityName(region.provinceId),
         footprintCityId: footprintCity?.id
       };
-      regions.set(key, mapRegion);
       provincePath.classList.add("home-map-region");
-      if (footprintCity && (visitedCityIds.has(footprintCity.id) || plannedCityIds.has(footprintCity.id)))
+      const isMarked = footprintCity && (visitedCityIds.has(footprintCity.id) || plannedCityIds.has(footprintCity.id));
+      if (isMarked)
         provincePath.classList.add(plannedCityIds.has(footprintCity.id) ? "is-planned" : "is-visited");
-      addRegionInteraction(provincePath, mapRegion, selectRegion);
+      if (!isMarked || interactiveCityIds.has(footprintCity.id)) {
+        regions.set(key, mapRegion);
+        addRegionInteraction(provincePath, mapRegion, selectRegion);
+      } else {
+        provincePath.classList.add("is-static-footprint");
+      }
       return;
     }
 
@@ -130,10 +135,15 @@ function appendRegionOverlays(svg, overlayData, cities, visitedCityIds, plannedC
         name: footprintCity?.name ?? boundaryRegionName(region.provinceId, firstBoundary),
         footprintCityId: footprintCity?.id
       };
-      regions.set(key, mapRegion);
-      if (footprintCity && (visitedCityIds.has(footprintCity.id) || plannedCityIds.has(footprintCity.id)))
+      const isMarked = footprintCity && (visitedCityIds.has(footprintCity.id) || plannedCityIds.has(footprintCity.id));
+      if (isMarked)
         regionGroup.classList.add(plannedCityIds.has(footprintCity.id) ? "is-planned" : "is-visited");
-      addRegionInteraction(regionGroup, mapRegion, selectRegion);
+      if (!isMarked || interactiveCityIds.has(footprintCity.id)) {
+        regions.set(key, mapRegion);
+        addRegionInteraction(regionGroup, mapRegion, selectRegion);
+      } else {
+        regionGroup.classList.add("is-static-footprint");
+      }
     });
   });
 }
@@ -342,6 +352,7 @@ export async function renderHome({ footprints, trips, onSelectTrip }) {
   const overseasRecords = allRecords.filter(record => record.country !== "KR");
   const visitedCityIds = new Set(footprints.records.filter(record => record.country === "KR").flatMap(record => record.cities));
   const plannedCityIds = new Set(plannedRecords.flatMap(record => record.cities));
+  const interactiveCityIds = new Set(allRecords.filter(record => record.startDate || record.tripId).flatMap(record => record.cities));
 
   document.getElementById("home-domestic-count").textContent = `${footprints.records.filter(record => record.country === "KR" && record.startDate).length}번의 여행`;
   document.getElementById("home-city-count").textContent = `${visitedCityIds.size}개 지역`;
@@ -402,12 +413,17 @@ export async function renderHome({ footprints, trips, onSelectTrip }) {
     footprints.cities,
     visitedCityIds,
     plannedCityIds,
+    interactiveCityIds,
     mapRegions,
     selectMapRegion
   );
   setupMapZoom(svg, mapHost);
 
   mapHost.addEventListener("click", event => {
+    if (event.target.closest(".is-static-footprint")) {
+      closeCityCard();
+      return;
+    }
     const regionTarget = event.target.closest("[data-map-region]");
     if (regionTarget) {
       selectMapRegion(regionTarget.dataset.mapRegion);
