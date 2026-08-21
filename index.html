@@ -353,10 +353,9 @@ function calculateDayDistance(plan) {
   return request;
 }
 
-function formatDistance(distanceRange) {
-  const min = (distanceRange.min / 1000).toFixed(1);
-  const max = (distanceRange.max / 1000).toFixed(1);
-  return min === max ? `${min}km` : `${min}~${max}km`;
+function formatDistance(distanceRange, fractionDigits = 1) {
+  const representativeDistance = (distanceRange.min + distanceRange.max) / 2;
+  return `${(representativeDistance / 1000).toFixed(fractionDigits)}km`;
 }
 
 function refreshDayDistance(plan) {
@@ -374,7 +373,7 @@ async function refreshTripDistance(trip) {
   const distances = await Promise.all(Object.values(trip.days).map(calculateDayDistance));
   const total = distances.reduce((sum, value) => ({ min: sum.min + value.min, max: sum.max + value.max }), { min: 0, max: 0 });
   if (activeTrip === trip)
-    distance.textContent = `이번 여행의 발자국 · 총 약 ${formatDistance(total)}`;
+    distance.textContent = `이번 여행의 발자국 · 총 약 ${formatDistance(total, 0)}`;
 }
 
 function filteredSegments(plan, startIdx, endIdx) {
