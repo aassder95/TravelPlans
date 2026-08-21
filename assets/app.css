@@ -41,18 +41,20 @@ h1 { margin:0; font-family:"Segoe UI Semibold","Segoe UI",sans-serif; font-size:
 .home-map svg { display:block; width:100%; height:100%; overflow:visible; user-select:none; }
 .home-province-shape { fill:#293033; stroke:#687275; stroke-width:1.1; vector-effect:non-scaling-stroke; transition:fill .15s,stroke .15s,filter .15s; }
 .home-city-overlay-source { pointer-events:auto; }
-.home-subregion-shape { fill:transparent; stroke:transparent; stroke-width:.85; pointer-events:none; vector-effect:non-scaling-stroke; transition:stroke .15s; }
-.home-map.is-detailed .home-subregion-shape { stroke:#657074; }
-.home-city-shape { pointer-events:auto; cursor:pointer; outline:none; vector-effect:non-scaling-stroke; }
-.home-city-shape path { pointer-events:auto; vector-effect:non-scaling-stroke; }
-.home-city-fill { pointer-events:none; }
-.home-city-shape.is-visited,.home-city-fill.is-visited { fill:#2d8b68; stroke:#92d8b8; stroke-width:1.35; }
-.home-city-shape.is-visited .home-subregion-shape,.home-city-fill.is-visited .home-subregion-shape { fill:#2d8b68; stroke:#92d8b8; }
-.home-city-shape.is-planned,.home-city-fill.is-planned { fill:#8b6b2d; stroke:#f0c76e; stroke-width:1.5; stroke-dasharray:3 2; }
-.home-city-shape.is-planned .home-subregion-shape,.home-city-fill.is-planned .home-subregion-shape { fill:#8b6b2d; stroke:#f0c76e; }
-.home-city-shape.is-selected,.home-city-fill.is-selected { fill:#49ad83; stroke:#f2fff9; stroke-width:2; filter:drop-shadow(0 0 3px #72d9ac); }
-.home-city-shape.is-selected .home-subregion-shape,.home-city-fill.is-selected .home-subregion-shape { fill:#49ad83; stroke:#f2fff9; }
-.home-city-shape:focus-visible { stroke:#fff; stroke-width:3; }
+.home-subregion-shape { fill:transparent; stroke:transparent; pointer-events:all; vector-effect:non-scaling-stroke; transition:fill .15s,stroke .15s; }
+.home-map-region { pointer-events:auto; cursor:pointer; outline:none; }
+.home-map-region.is-visited .home-subregion-shape,.home-map-region.is-visited.home-province-shape { fill:#2d8b68; stroke:#92d8b8; stroke-width:1.35; }
+.home-map-region.is-planned .home-subregion-shape,.home-map-region.is-planned.home-province-shape { fill:#8b6b2d; stroke:#f0c76e; stroke-width:1.5; stroke-dasharray:3 2; }
+.home-map.is-city-detailed .home-map-region.is-city-region { filter:drop-shadow(0 0 .65px #778184); }
+.home-map.is-city-detailed .home-map-region.is-city-region:not(.is-visited):not(.is-planned) .home-subregion-shape { fill:#293033; }
+.home-map.is-seoul-detailed .home-map-region.is-seoul-district { filter:drop-shadow(0 0 .65px #778184); }
+.home-map.is-seoul-detailed .home-map-region.is-seoul-district:not(.is-visited):not(.is-planned) .home-subregion-shape { fill:#293033; }
+.home-map-region.is-selected .home-subregion-shape,.home-map-region.is-selected.home-province-shape { fill:#49ad83; stroke:#f2fff9; stroke-width:2; filter:drop-shadow(0 0 3px #72d9ac); }
+.home-map-region.is-city-region.is-visited { filter:drop-shadow(0 0 .8px #92d8b8); }
+.home-map-region.is-city-region.is-planned { filter:drop-shadow(0 0 .8px #f0c76e); }
+.home-map-region.is-city-region.is-selected { filter:drop-shadow(0 0 1.2px #f2fff9) drop-shadow(0 0 3px #72d9ac); }
+.home-map-region.is-city-region.is-visited .home-subregion-shape,.home-map-region.is-city-region.is-planned .home-subregion-shape,.home-map-region.is-city-region.is-selected .home-subregion-shape { stroke:transparent; filter:none; }
+.home-map-region:focus-visible .home-subregion-shape,.home-map-region.home-province-shape:focus-visible { stroke:#fff; stroke-width:3; }
 .home-map-controls { position:absolute; z-index:5; top:9px; right:9px; display:grid; gap:4px; }
 .home-map-controls button { display:flex; align-items:center; justify-content:center; width:38px; height:38px; padding:0; border:1px solid var(--border); border-radius:6px; background:#191d20ed; color:var(--text-primary); font-size:20px; font-weight:700; box-shadow:0 3px 10px #0008; cursor:pointer; }
 .home-map-controls button:last-child { height:32px; font-size:10px; }
@@ -65,6 +67,7 @@ h1 { margin:0; font-family:"Segoe UI Semibold","Segoe UI",sans-serif; font-size:
 .home-city-card-records { margin-top:6px; border-top:1px solid var(--border); }
 .home-city-card .footprint-item { min-height:45px; padding:8px 1px; }
 .home-city-card .footprint-item:last-child { padding-bottom:1px; }
+.home-city-card-empty { margin:0; padding:9px 1px 1px; color:var(--text-muted); font-size:11px; }
 .home-map-legend { display:flex; justify-content:center; gap:16px; margin-top:9px; color:var(--text-muted); font-size:10.5px; }
 .home-map-legend span { display:flex; align-items:center; gap:5px; }
 .home-map-legend i { width:12px; height:12px; border:1px solid; border-radius:3px; }

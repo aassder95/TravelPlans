@@ -18,25 +18,16 @@ function createSvgPath(pathData) {
   return path;
 }
 
-function addCityInteraction(paths, city, selectCity, status = "visited") {
-  paths.forEach(path => {
-    if (!path)
-      return;
-    path.classList.add("home-city-shape", `is-${status}`);
-    path.dataset.city = city.id;
-    path.setAttribute("role", "button");
-    path.setAttribute("tabindex", "0");
-    path.setAttribute("aria-label", `${city.name} 발자국 보기`);
-    path.addEventListener("click", event => {
-      event.stopPropagation();
-      selectCity(city.id);
-    });
-    path.addEventListener("keydown", event => {
-      if (event.key === "Enter" || event.key === " ") {
-        event.preventDefault();
-        selectCity(city.id);
-      }
-    });
+function addRegionInteraction(element, region, selectRegion) {
+  element.dataset.mapRegion = region.key;
+  element.setAttribute("role", "button");
+  element.setAttribute("tabindex", "0");
+  element.setAttribute("aria-label", `${region.name} 지역 보기`);
+  element.addEventListener("keydown", event => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      selectRegion(region.key);
+    }
   });
 }
 
@@ -47,34 +38,79 @@ function findBoundaryCity(region, boundaryId, cities) {
   ));
 }
 
-function appendCityOverlays(svg, overlayData, cities, visitedCityIds, plannedCityIds, selectCity) {
-  overlayData.regions.forEach(region => {
+function boundaryRegionName(provinceId, boundaryId) {
+  if (provinceId === "서울특별시")
+    return boundaryId;
+  return boundaryId.match(/^(.+?(?:시|군))(?:\s|$)/)?.[1] ?? boundaryId;
+}
+
+function isSingleCityProvince(provinceId) {
+  return provinceId !== "서울특별시" && /(?:광역시|특별자치시)$/.test(provinceId);
+}
+
+function provinceCityName(provinceId) {
+  return provinceId.replace(/(?:특별자치시|광역시)$/, "");
+}
+
+function appendRegionOverlays(svg, overlayData, cities, visitedCityIds, plannedCityIds, regions, selectRegion) {
+  let definitions = svg.querySelector("defs");
+  if (!definitions) {
+    definitions = document.createElementNS(svgNamespace, "defs");
+    svg.prepend(definitions);
+  }
+
+  overlayData.regions.forEach((region, regionIndex) => {
     const provincePath = svg.querySelector(`[id="${region.provinceId}"]`);
     if (!provincePath)
       return;
 
+    if (isSingleCityProvince(region.provinceId)) {
+      const footprintCity = cities.find(city => city.pathIds?.includes(region.provinceId));
+      const key = footprintCity?.id ?? `province:${region.provinceId}`;
+      const mapRegion = {
+        key,
+        name: footprintCity?.name ?? provinceCityName(region.provinceId),
+        footprintCityId: footprintCity?.id
+      };
+      regions.set(key, mapRegion);
+      provincePath.classList.add("home-map-region");
+      if (footprintCity && (visitedCityIds.has(footprintCity.id) || plannedCityIds.has(footprintCity.id)))
+        provincePath.classList.add(plannedCityIds.has(footprintCity.id) ? "is-planned" : "is-visited");
+      addRegionInteraction(provincePath, mapRegion, selectRegion);
+      return;
+    }
+
     const sourceGroup = document.createElementNS(svgNamespace, "g");
     sourceGroup.classList.add("home-city-overlay-source");
-    const cityGroups = new Map();
+    const clippedGroup = document.createElementNS(svgNamespace, "g");
+    const clipPath = document.createElementNS(svgNamespace, "clipPath");
+    const clipId = `home-province-clip-${regionIndex}`;
+    const clipShape = provincePath.cloneNode(false);
+    clipShape.removeAttribute("id");
+    clipShape.removeAttribute("class");
+    clipPath.id = clipId;
+    clipPath.setAttribute("clipPathUnits", "userSpaceOnUse");
+    clipPath.append(clipShape);
+    definitions.append(clipPath);
+    clippedGroup.setAttribute("clip-path", `url(#${clipId})`);
+    clippedGroup.append(sourceGroup);
+    const regionGroups = new Map();
     region.paths.forEach(boundary => {
       const path = createSvgPath(boundary.d);
       path.classList.add("home-subregion-shape");
       path.dataset.boundary = boundary.id;
-      const city = findBoundaryCity(region, boundary.id, cities);
-      if (!city || (!visitedCityIds.has(city.id) && !plannedCityIds.has(city.id))) {
-        sourceGroup.append(path);
-        return;
+      const regionName = boundaryRegionName(region.provinceId, boundary.id);
+      const key = `boundary:${region.provinceId}:${regionName}`;
+      let regionGroup = regionGroups.get(key);
+      if (!regionGroup) {
+        regionGroup = document.createElementNS(svgNamespace, "g");
+        regionGroup.classList.add("home-map-region", region.provinceId === "서울특별시" ? "is-seoul-district" : "is-city-region");
+        regionGroups.set(key, regionGroup);
+        sourceGroup.append(regionGroup);
       }
-
-      let cityGroup = cityGroups.get(city.id);
-      if (!cityGroup) {
-        cityGroup = document.createElementNS(svgNamespace, "g");
-        cityGroups.set(city.id, cityGroup);
-        sourceGroup.append(cityGroup);
-      }
-      cityGroup.append(path);
+      regionGroup.append(path);
     });
-    svg.append(sourceGroup);
+    svg.append(clippedGroup);
 
     const [sourceX, sourceY, sourceWidth, sourceHeight] = region.viewBox;
     const targetBox = provincePath.getBBox();
@@ -85,20 +121,19 @@ function appendCityOverlays(svg, overlayData, cities, visitedCityIds, plannedCit
       `translate(${targetBox.x} ${targetBox.y}) scale(${scaleX} ${scaleY}) translate(${-sourceX} ${-sourceY})`
     );
 
-    cityGroups.forEach((cityGroup, cityId) => {
-      const city = cities.find(candidate => candidate.id === cityId);
-      const status = plannedCityIds.has(cityId) ? "planned" : "visited";
-      if (city.pathIds) {
-        cityGroup.classList.add("home-city-fill", `is-${status}`);
-        cityGroup.dataset.city = cityId;
-        return;
-      }
-      addCityInteraction(
-        [cityGroup],
-        city,
-        selectCity,
-        status
-      );
+    regionGroups.forEach((regionGroup, generatedKey) => {
+      const firstBoundary = regionGroup.querySelector(".home-subregion-shape").dataset.boundary;
+      const footprintCity = findBoundaryCity(region, firstBoundary, cities);
+      const key = footprintCity?.id ?? generatedKey;
+      const mapRegion = {
+        key,
+        name: footprintCity?.name ?? boundaryRegionName(region.provinceId, firstBoundary),
+        footprintCityId: footprintCity?.id
+      };
+      regions.set(key, mapRegion);
+      if (footprintCity && (visitedCityIds.has(footprintCity.id) || plannedCityIds.has(footprintCity.id)))
+        regionGroup.classList.add(plannedCityIds.has(footprintCity.id) ? "is-planned" : "is-visited");
+      addRegionInteraction(regionGroup, mapRegion, selectRegion);
     });
   });
 }
@@ -136,7 +171,8 @@ function setupMapZoom(svg, mapHost) {
   function applyView() {
     clampView();
     svg.setAttribute("viewBox", `${view.x} ${view.y} ${view.width} ${view.height}`);
-    mapHost.classList.toggle("is-detailed", scale >= 1.5);
+    mapHost.classList.toggle("is-city-detailed", scale >= 1.5);
+    mapHost.classList.toggle("is-seoul-detailed", scale >= 3);
     document.getElementById("home-map-zoom-out").disabled = scale <= 1;
     document.getElementById("home-map-zoom-in").disabled = scale >= 7;
   }
@@ -187,7 +223,6 @@ function setupMapZoom(svg, mapHost) {
   mapHost.addEventListener("pointerdown", event => {
     if (event.target.closest(".home-map-controls"))
       return;
-    mapHost.setPointerCapture(event.pointerId);
     pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
     startGesture();
   });
@@ -203,6 +238,8 @@ function setupMapZoom(svg, mapHost) {
       view.x = gesture.view.x - dx * gesture.view.width / gesture.rect.width;
       view.y = gesture.view.y - dy * gesture.view.height / gesture.rect.height;
       dragged ||= Math.hypot(dx, dy) > 4;
+      if (dragged && !mapHost.hasPointerCapture(event.pointerId))
+        mapHost.setPointerCapture(event.pointerId);
       applyView();
       return;
     }
@@ -222,6 +259,11 @@ function setupMapZoom(svg, mapHost) {
       view.x = anchorX - view.width * currentRatioX;
       view.y = anchorY - view.height * currentRatioY;
       dragged = true;
+      points.forEach((_, index) => {
+        const pointerId = [...pointers.keys()][index];
+        if (!mapHost.hasPointerCapture(pointerId))
+          mapHost.setPointerCapture(pointerId);
+      });
       applyView();
     }
   });
@@ -284,7 +326,7 @@ export async function renderHome({ footprints, trips, onSelectTrip }) {
   const cityCard = document.getElementById("home-city-card");
   const cityCardName = document.getElementById("home-city-card-name");
   const cityCardRecords = document.getElementById("home-city-card-records");
-  const citiesById = new Map(footprints.cities.map(city => [city.id, city]));
+  const mapRegions = new Map();
   const plannedRecords = trips.map(trip => ({
     id: `planned-${trip.id}`,
     label: trip.region,
@@ -307,20 +349,31 @@ export async function renderHome({ footprints, trips, onSelectTrip }) {
   document.getElementById("domestic-record-count").textContent = `${domesticRecords.length}개 기록`;
   document.getElementById("overseas-record-count").textContent = `${overseasRecords.length}개 기록`;
 
-  function selectMapCity(cityId) {
-    const city = citiesById.get(cityId);
-    const records = domesticRecords.filter(record => record.cities.includes(cityId));
-    cityCardName.textContent = city.name;
-    cityCardRecords.replaceChildren(...sortRecords(records).map(record => createFootprintItem(record, onSelectTrip)));
+  function selectMapRegion(regionKey) {
+    const region = mapRegions.get(regionKey);
+    if (!region)
+      return;
+    const records = region.footprintCityId
+      ? domesticRecords.filter(record => record.cities.includes(region.footprintCityId))
+      : [];
+    cityCardName.textContent = region.name;
+    if (records.length) {
+      cityCardRecords.replaceChildren(...sortRecords(records).map(record => createFootprintItem(record, onSelectTrip)));
+    } else {
+      const empty = document.createElement("p");
+      empty.className = "home-city-card-empty";
+      empty.textContent = "아직 발자국이 없는 지역";
+      cityCardRecords.replaceChildren(empty);
+    }
     cityCard.hidden = false;
-    mapHost.querySelectorAll(".home-city-shape,.home-city-fill").forEach(path => {
-      path.classList.toggle("is-selected", path.dataset.city === cityId);
+    mapHost.querySelectorAll(".home-map-region").forEach(path => {
+      path.classList.toggle("is-selected", path.dataset.mapRegion === regionKey);
     });
   }
 
   function closeCityCard() {
     cityCard.hidden = true;
-    mapHost.querySelectorAll(".home-city-shape,.home-city-fill").forEach(path => path.classList.remove("is-selected"));
+    mapHost.querySelectorAll(".home-map-region").forEach(path => path.classList.remove("is-selected"));
   }
 
   list.replaceChildren(...sortRecords(domesticRecords).map(record => createFootprintItem(record, onSelectTrip)));
@@ -343,19 +396,21 @@ export async function renderHome({ footprints, trips, onSelectTrip }) {
   svg.setAttribute("role", "img");
   svg.querySelectorAll("path").forEach(path => path.classList.add("home-province-shape"));
 
-  footprints.cities.forEach(city => {
-    if (!city.pathIds || (!visitedCityIds.has(city.id) && !plannedCityIds.has(city.id)))
-      return;
-    const paths = city.pathIds.map(id => svg.querySelector(`[id="${id}"]`)).filter(Boolean);
-    addCityInteraction(paths, city, selectMapCity, plannedCityIds.has(city.id) ? "planned" : "visited");
-  });
-  appendCityOverlays(svg, await overlayResponse.json(), footprints.cities, visitedCityIds, plannedCityIds, selectMapCity);
+  appendRegionOverlays(
+    svg,
+    await overlayResponse.json(),
+    footprints.cities,
+    visitedCityIds,
+    plannedCityIds,
+    mapRegions,
+    selectMapRegion
+  );
   setupMapZoom(svg, mapHost);
 
   mapHost.addEventListener("click", event => {
-    const cityTarget = event.target.closest("[data-city]");
-    if (cityTarget) {
-      selectMapCity(cityTarget.dataset.city);
+    const regionTarget = event.target.closest("[data-map-region]");
+    if (regionTarget) {
+      selectMapRegion(regionTarget.dataset.mapRegion);
       return;
     }
     if (event.target === svg || event.target.closest("g")?.id === "전국_시도_경계")
