@@ -120,6 +120,12 @@
       "label": "화성",
       "country": "KR",
       "cities": ["hwaseong"]
+    },
+    {
+      "id": "yongin-frequent",
+      "label": "용인",
+      "country": "KR",
+      "cities": ["yongin"]
     }
   ],
   "cities": [
@@ -138,6 +144,7 @@
     { "id": "suwon", "name": "수원", "provinceId": "경기도", "boundaryPrefixes": ["수원시 "] },
     { "id": "anyang", "name": "안양", "provinceId": "경기도", "boundaryPrefixes": ["안양시 "] },
     { "id": "hwaseong", "name": "화성", "provinceId": "경기도", "boundaryPrefixes": ["화성시"] },
+    { "id": "yongin", "name": "용인", "provinceId": "경기도", "boundaryPrefixes": ["용인시 "] },
     { "id": "gwacheon", "name": "과천", "provinceId": "경기도", "boundaryPrefixes": ["과천시"] },
     { "id": "jeonju", "name": "전주", "provinceId": "전라북도", "boundaryPrefixes": ["전주시 "] },
     { "id": "yeosu", "name": "여수", "provinceId": "전라남도", "boundaryPrefixes": ["여수시"] },
