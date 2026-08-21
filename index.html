@@ -288,6 +288,8 @@ let activePlan;
 let activeDayKey;
 let activeView = "schedule";
 let feedbackTimer;
+let isRestoringUiState = true;
+const uiStateKey = "travelPlans.uiState.v1";
 const roadRouteCache = new Map();
 const dayDistanceCache = new Map();
 
@@ -295,6 +297,32 @@ L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
   maxZoom: 19,
   attribution: "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors"
 }).addTo(map);
+
+function loadUiState() {
+  try {
+    const state = JSON.parse(localStorage.getItem(uiStateKey));
+    return state && typeof state === "object" ? state : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveUiState() {
+  if (isRestoringUiState || !activeTrip || !activePlan || !activeDayKey)
+    return;
+
+  try {
+    localStorage.setItem(uiStateKey, JSON.stringify({
+      tripId: activeTrip.id,
+      dayKey: activeDayKey,
+      view: activeView,
+      startIdx: Number(routeStart.value),
+      endIdx: Number(routeEnd.value)
+    }));
+  } catch {
+    // 저장소 사용이 제한된 브라우저에서도 일정표 자체는 그대로 동작한다.
+  }
+}
 
 function segmentLocations(plan, segment) {
   return segment.points.map(index => {
@@ -441,12 +469,15 @@ async function drawMap(plan, startIdx, endIdx) {
 
   visiblePoints.forEach(({ lon, lat, names, indexes }) => {
     const isCombined = indexes.length > 1;
+    const isEndpoint = indexes.includes(startIdx) || indexes.includes(endIdx);
     const width = isCombined ? 42 : 30;
     const numbers = indexes.map(index => index + 1).join("·");
     const labels = [...new Set(names)].join(" / ");
     const directionIndex = indexes[0];
     const icon = L.divIcon({ className: "", html: `<span class="route-pin${isCombined ? " is-combined" : ""}" style="--pin-color:${plan.color}">${numbers}</span>`, iconSize: [width, 30], iconAnchor: [width / 2, 15] });
-    L.marker([lat, lon], { icon }).bindTooltip(labels, { permanent: true, direction: directionIndex % 2 ? "bottom" : "top", className: "place-label", offset: [0, directionIndex % 2 ? 12 : -12] }).addTo(routeLayers);
+    const marker = L.marker([lat, lon], { icon }).bindTooltip(labels, { permanent: isEndpoint, direction: directionIndex % 2 ? "bottom" : "top", className: "place-label", offset: [0, directionIndex % 2 ? 12 : -12] });
+    marker.on("click", () => marker.openTooltip());
+    marker.addTo(routeLayers);
   });
 
   map.fitBounds(bounds, { padding: [45, 45], maxZoom: 15 });
@@ -764,6 +795,7 @@ function drawSelectedRoute() {
   renderSchedule(activePlan, startIdx, endIdx);
   drawMap(activePlan, startIdx, endIdx);
   updateRouteActions();
+  saveUiState();
 }
 
 function updateRouteActions(now = new Date()) {
@@ -852,6 +884,7 @@ function setActiveView(view) {
       drawSelectedRoute();
     }, 0);
   }
+  saveUiState();
 }
 
 function selectDay(key) {
@@ -873,7 +906,7 @@ function selectDay(key) {
   drawSelectedRoute();
 }
 
-function renderDayTabs() {
+function renderDayTabs(preferredDayKey) {
   const keys = Object.keys(activeTrip.days);
   dayTabs.replaceChildren();
   dayTabs.style.setProperty("--day-count", keys.length);
@@ -887,17 +920,17 @@ function renderDayTabs() {
     button.addEventListener("click", () => selectDay(key));
     dayTabs.append(button);
   });
-  selectDay(keys[0]);
+  selectDay(keys.includes(preferredDayKey) ? preferredDayKey : keys[0]);
 }
 
-function selectTrip(id) {
-  activeTrip = trips.find(trip => trip.id === id);
+function selectTrip(id, preferredDayKey) {
+  activeTrip = trips.find(trip => trip.id === id) ?? trips[0];
   document.querySelectorAll(".trip-tabs button").forEach(button => {
     const active = button.dataset.trip === id;
     button.classList.toggle("active", active);
     button.setAttribute("aria-pressed", active);
   });
-  renderDayTabs();
+  renderDayTabs(preferredDayKey);
   refreshTripDistance(activeTrip);
 }
 
@@ -923,8 +956,22 @@ document.getElementById("view-map").addEventListener("click", () => setActiveVie
 document.getElementById("back-to-top").addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
 window.addEventListener("scroll", () => document.getElementById("back-to-top").classList.toggle("show", window.scrollY > 500), { passive: true });
 
-selectTrip(trips[0].id);
-setActiveView(activeView);
+const savedUiState = loadUiState();
+const initialTrip = trips.find(trip => trip.id === savedUiState?.tripId) ?? trips[0];
+selectTrip(initialTrip.id, savedUiState?.dayKey);
+
+if (savedUiState?.tripId === activeTrip.id && savedUiState?.dayKey === activeDayKey) {
+  const lastPointIndex = activePlan.points.length - 1;
+  const startIdx = Math.min(Math.max(Number(savedUiState.startIdx) || 0, 0), lastPointIndex - 1);
+  const endIdx = Math.min(Math.max(Number(savedUiState.endIdx) || lastPointIndex, startIdx + 1), lastPointIndex);
+  routeStart.value = startIdx;
+  fillEndOptions(startIdx, endIdx);
+  drawSelectedRoute();
+}
+
+setActiveView(savedUiState?.view === "map" ? "map" : "schedule");
+isRestoringUiState = false;
+saveUiState();
   </script>
 </body>
 </html>
