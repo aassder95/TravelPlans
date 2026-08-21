@@ -149,6 +149,9 @@ function appendRegionOverlays(svg, overlayData, cities, visitedCityIds, plannedC
 }
 
 function setupMapZoom(svg, mapHost) {
+  const maxScale = 12;
+  const mouseDragThreshold = 4;
+  const touchDragThreshold = 12;
   const provinceBoxes = [...svg.querySelectorAll("#전국_시도_경계 > path")].map(path => path.getBBox());
   const contentBox = provinceBoxes.reduce((box, current) => ({
     x: Math.min(box.x, current.x),
@@ -184,7 +187,7 @@ function setupMapZoom(svg, mapHost) {
     mapHost.classList.toggle("is-city-detailed", scale >= 1.5);
     mapHost.classList.toggle("is-seoul-detailed", scale >= 3);
     document.getElementById("home-map-zoom-out").disabled = scale <= 1;
-    document.getElementById("home-map-zoom-in").disabled = scale >= 7;
+    document.getElementById("home-map-zoom-in").disabled = scale >= maxScale;
   }
 
   function zoomTo(nextScale, clientX, clientY) {
@@ -193,7 +196,7 @@ function setupMapZoom(svg, mapHost) {
     const ratioY = clientY == null ? 0.5 : Math.min(Math.max((clientY - rect.top) / rect.height, 0), 1);
     const anchorX = view.x + view.width * ratioX;
     const anchorY = view.y + view.height * ratioY;
-    scale = Math.min(Math.max(nextScale, 1), 7);
+    scale = Math.min(Math.max(nextScale, 1), maxScale);
     const nextWidth = bounds.width / scale;
     const nextHeight = bounds.height / scale;
     view.x = anchorX - nextWidth * ratioX;
@@ -207,10 +210,16 @@ function setupMapZoom(svg, mapHost) {
     applyView();
   }
 
-  function startGesture() {
+  function startGesture(tapTarget) {
     const points = [...pointers.values()];
     const rect = svg.getBoundingClientRect();
-    gesture = { view: { ...view }, scale, points, rect };
+    gesture = {
+      view: { ...view },
+      scale,
+      points,
+      rect,
+      tapTarget: points.length === 1 ? tapTarget : undefined
+    };
     if (points.length === 2) {
       gesture.distance = Math.hypot(points[1].x - points[0].x, points[1].y - points[0].y);
       gesture.midpoint = {
@@ -233,22 +242,37 @@ function setupMapZoom(svg, mapHost) {
   mapHost.addEventListener("pointerdown", event => {
     if (event.target.closest(".home-map-controls"))
       return;
-    pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
-    startGesture();
+    if (!pointers.size)
+      dragged = false;
+    pointers.set(event.pointerId, {
+      x: event.clientX,
+      y: event.clientY,
+      pointerType: event.pointerType
+    });
+    startGesture(event.target.closest(".home-map-region, .is-static-footprint"));
   });
 
   mapHost.addEventListener("pointermove", event => {
     if (!pointers.has(event.pointerId) || !gesture)
       return;
-    pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    pointers.set(event.pointerId, {
+      ...pointers.get(event.pointerId),
+      x: event.clientX,
+      y: event.clientY
+    });
     const points = [...pointers.values()];
     if (points.length === 1 && gesture.points.length === 1 && scale > 1) {
       const dx = points[0].x - gesture.points[0].x;
       const dy = points[0].y - gesture.points[0].y;
+      const dragThreshold = gesture.points[0].pointerType === "touch"
+        ? touchDragThreshold
+        : mouseDragThreshold;
+      dragged ||= Math.hypot(dx, dy) > dragThreshold;
+      if (!dragged)
+        return;
       view.x = gesture.view.x - dx * gesture.view.width / gesture.rect.width;
       view.y = gesture.view.y - dy * gesture.view.height / gesture.rect.height;
-      dragged ||= Math.hypot(dx, dy) > 4;
-      if (dragged && !mapHost.hasPointerCapture(event.pointerId))
+      if (!mapHost.hasPointerCapture(event.pointerId))
         mapHost.setPointerCapture(event.pointerId);
       applyView();
       return;
@@ -256,7 +280,7 @@ function setupMapZoom(svg, mapHost) {
     if (points.length === 2 && gesture.points.length === 2) {
       const distance = Math.hypot(points[1].x - points[0].x, points[1].y - points[0].y);
       const midpoint = { x: (points[0].x + points[1].x) / 2, y: (points[0].y + points[1].y) / 2 };
-      const nextScale = Math.min(Math.max(gesture.scale * distance / gesture.distance, 1), 7);
+      const nextScale = Math.min(Math.max(gesture.scale * distance / gesture.distance, 1), maxScale);
       const startRatioX = (gesture.midpoint.x - gesture.rect.left) / gesture.rect.width;
       const startRatioY = (gesture.midpoint.y - gesture.rect.top) / gesture.rect.height;
       const currentRatioX = (midpoint.x - gesture.rect.left) / gesture.rect.width;
@@ -278,15 +302,22 @@ function setupMapZoom(svg, mapHost) {
     }
   });
 
-  function endPointer(event) {
+  function endPointer(event, cancelled = false) {
+    const tapTarget = gesture?.tapTarget;
+    const isTap = !cancelled
+      && pointers.size === 1
+      && gesture?.points.length === 1
+      && !dragged;
     pointers.delete(event.pointerId);
     if (pointers.size)
       startGesture();
     else
       gesture = undefined;
+    if (isTap)
+      mapHost.dispatchEvent(new CustomEvent("home-map-tap", { detail: { target: tapTarget } }));
   }
   mapHost.addEventListener("pointerup", endPointer);
-  mapHost.addEventListener("pointercancel", endPointer);
+  mapHost.addEventListener("pointercancel", event => endPointer(event, true));
   mapHost.addEventListener("click", event => {
     if (!dragged)
       return;
@@ -419,18 +450,17 @@ export async function renderHome({ footprints, trips, onSelectTrip }) {
   );
   setupMapZoom(svg, mapHost);
 
-  mapHost.addEventListener("click", event => {
-    if (event.target.closest(".is-static-footprint")) {
+  mapHost.addEventListener("home-map-tap", event => {
+    const regionTarget = event.detail.target;
+    if (regionTarget?.classList.contains("is-static-footprint")) {
       closeCityCard();
       return;
     }
-    const regionTarget = event.target.closest("[data-map-region]");
-    if (regionTarget) {
+    if (regionTarget?.dataset.mapRegion) {
       selectMapRegion(regionTarget.dataset.mapRegion);
       return;
     }
-    if (event.target === svg || event.target.closest("g")?.id === "전국_시도_경계")
-      closeCityCard();
+    closeCityCard();
   });
   closeCityCard();
   panel.dataset.ready = "true";
