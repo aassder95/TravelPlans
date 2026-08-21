@@ -49,7 +49,7 @@ h1 { margin:0; font-family:"Segoe UI Semibold","Segoe UI",sans-serif; font-size:
 .day-tabs button.active::after { transform:scaleX(1); }
 .day-tabs small,.day-tabs span { display:block; overflow:hidden; font-size:10px; white-space:nowrap; text-overflow:ellipsis; }
 .day-tabs strong { display:block; margin:2px 0; font-size:15px; }
-.view-switch { display:grid; grid-template-columns:repeat(3,1fr); gap:4px; margin-top:8px; padding:3px; border:1px solid var(--border); border-radius:7px; background:var(--input-bg); }
+.view-switch { display:grid; grid-template-columns:repeat(2,1fr); gap:4px; margin-top:8px; padding:3px; border:1px solid var(--border); border-radius:7px; background:var(--input-bg); }
 .view-switch button { min-height:36px; border:0; border-radius:5px; background:transparent; color:var(--text-muted); font-size:12px; font-weight:700; cursor:pointer; }
 .view-switch button.active { background:var(--selection); color:var(--text-primary); box-shadow:inset 0 0 0 1px var(--accent); }
 .view-panel[hidden] { display:none; }
@@ -128,20 +128,6 @@ tbody tr.movement-row.is-current { border:1px solid var(--focus); background:var
 .back-to-top { position:fixed; right:max(14px,calc((100vw - 390px)/2 + 14px)); bottom:calc(14px + env(safe-area-inset-bottom)); z-index:1000; width:42px; height:42px; border:1px solid var(--accent); border-radius:50%; background:#191d20ed; color:var(--text-primary); font-size:18px; font-weight:700; box-shadow:0 4px 14px #0009; opacity:0; pointer-events:none; transform:translateY(8px); transition:opacity .18s,transform .18s; }
 .back-to-top.show { opacity:1; pointer-events:auto; transform:translateY(0); }
 .day-tabs[hidden],.day-overview[hidden] { display:none; }
-.booking-head { display:flex; align-items:flex-end; justify-content:space-between; gap:12px; margin-bottom:10px; }
-.booking-head h2 { margin:0; font-size:18px; }
-.booking-progress { color:var(--focus); font-size:12px; font-weight:700; white-space:nowrap; }
-.booking-list { display:grid; gap:7px; }
-.booking-item { padding:11px 12px; border:1px solid var(--border); border-radius:6px; background:var(--input-bg); }
-.booking-item-head { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
-.booking-kind { display:block; margin-bottom:3px; color:var(--text-muted); font-size:10px; font-weight:700; }
-.booking-name { margin:0; color:var(--text-primary); font-size:15px; line-height:1.4; }
-.booking-status { flex:0 0 auto; padding:4px 7px; border:1px solid var(--border); border-radius:999px; font-size:10px; font-weight:800; white-space:nowrap; }
-.booking-status.done { border-color:var(--accent); background:var(--selection); color:var(--text-primary); }
-.booking-status.planned { border-color:#7b693a; background:#302a19; color:#e8c873; }
-.booking-status.onsite { border-color:#53626a; background:#20292d; color:#b8cbd4; }
-.booking-details { display:grid; gap:4px; margin-top:8px; padding-top:8px; border-top:1px solid var(--border); }
-.booking-detail { color:var(--text-muted); font-size:11.5px; line-height:1.45; }
 @media (min-width:391px) {
   .hero,.page { box-shadow:0 0 30px #0007; }
 }
@@ -184,7 +170,6 @@ tbody tr.movement-row.is-current { border:1px solid var(--focus); background:var
     <div class="view-switch" role="tablist" aria-label="여행 정보 보기">
       <button type="button" id="view-schedule" role="tab" aria-controls="schedule-panel">일정</button>
       <button type="button" id="view-map" role="tab" aria-controls="map-panel">지도</button>
-      <button type="button" id="view-booking" role="tab" aria-controls="booking-panel">예매</button>
     </div>
 
     <section class="card route-card view-panel" id="map-panel" role="tabpanel" aria-labelledby="view-map">
@@ -206,14 +191,6 @@ tbody tr.movement-row.is-current { border:1px solid var(--focus); background:var
       </div>
     </section>
 
-    <section class="card booking-card view-panel" id="booking-panel" role="tabpanel" aria-labelledby="view-booking">
-      <div class="booking-head">
-        <h2>예매·예약</h2>
-        <span class="booking-progress" id="booking-progress"></span>
-      </div>
-      <div class="booking-list" id="booking-list"></div>
-    </section>
-
   </main>
   <button type="button" class="back-to-top" id="back-to-top" aria-label="맨 위로">↑</button>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
@@ -223,75 +200,69 @@ const trips = [{
   tab: "26.09.05~26.09.07/여수",
   dateRange: "2026.09.05 ~ 2026.09.07",
   color: "#206c4c",
-  bookings: [
-    {kind:"교통",name:"왕복 기차",status:"done",statusLabel:"완료",details:["9월 5일 · 수원 08:48 → 여수엑스포 13:05","9월 5일 · 동탄 10:37 → 여수엑스포 13:27","9월 7일 · 여수엑스포 14:32 → 광명 17:23","9월 7일 · 여수엑스포 14:32 → 동탄 17:17"]},
-    {kind:"숙박",name:"돌산 숙소",status:"done",statusLabel:"완료",details:["9월 5일 15:00 체크인","9월 7일 11:00 체크아웃"]},
-    {kind:"관람",name:"아쿠아플라넷 여수",status:"planned",statusLabel:"예매 예정",details:["9월 6일 13:40 방문"]},
-    {kind:"관람",name:"아르떼뮤지엄 여수",status:"planned",statusLabel:"예매 예정",details:["9월 6일 16:00 방문"]},
-    {kind:"이동",name:"여수해상케이블카 편도",status:"onsite",statusLabel:"당일 결정",details:["9월 6일 17:50 발권·대기","18:30 자산 → 돌산 탑승"]}
-  ],
   days: {
   sat: {
     isoDate: "2026-09-05", date: "9월 5일", day: "토요일", theme: "도심·밤바다", color: "#206c4c",
-    summary: "여수엑스포역 → 숙소(짐 맡기기) → 이순신광장 점심 권역 → 먹거리 골목 → 이순신광장 → 고소동 → 하멜등대 → 하멜로 저녁 권역 → 밤바다 → 숙소(복귀)",
-    note: "점심·간식·저녁은 같은 권역 후보 중 당일 골라도 이후 동선이 같아요. 순이네밥상을 고르면 15:30 휴식시간 전에 식사를 마쳐야 해요.",
-    points: [["여수엑스포역",127.74924,34.75551],["숙소(짐 맡기기)",127.75165,34.73155],["이순신광장 점심 권역",127.73777,34.74136],["이순신광장 먹거리 골목",127.73565,34.74027],["이순신광장",127.73594,34.7393],["고소동 벽화마을",127.73998,34.73835],["하멜등대",127.74702,34.73645],["하멜로 저녁 권역",127.74514,34.73969],["낭만포차·밤바다",127.74494,34.73832],["숙소(복귀)",127.75165,34.73155]],
+    summary: "여수엑스포역 → 순이네밥상 → 숙소(체크인) → 이순신광장 → 고소동 → 하멜등대 → 하멜로 저녁 권역 → 낭만포차·밤바다 → 숙소(복귀)",
+    note: "게장 점심 뒤 숙소에서 수영과 사우나를 먼저 이용하고, 이순신광장부터 하멜등대까지 걸어서 이어 봐요.",
+    points: [["여수엑스포역",127.74924,34.75551],["순이네밥상",127.73777,34.74136],["숙소(체크인)",127.75165,34.73155],["이순신광장",127.73594,34.7393],["고소동 벽화마을",127.73998,34.73835],["하멜등대",127.74702,34.73645],["하멜로 저녁 권역",127.74514,34.73969],["낭만포차·밤바다",127.74494,34.73832],["숙소(복귀)",127.75165,34.73155]],
     segments: [
-      {mode:"drive",points:[0,1,2]},
-      {mode:"foot",points:[2,3,4,5,6,7,8]},
-      {mode:"drive",points:[8,9]}
+      {mode:"drive",points:[0,1,2,3]},
+      {mode:"foot",points:[3,4,5,6,7]},
+      {mode:"drive",points:[7,8]}
     ],
     rows: [
       ["08:48~13:27","","여수엑스포역","각자의 출발, 여수에서 만나기","",null,{journeys:[["수원 출발","08:48","수원역","13:05","여수엑스포역","22분 먼저 도착"],["동탄 출발","10:37","동탄역","13:27","여수엑스포역",""]],meeting:"13:27 · 여수엑스포역 합류"}],
-      ["13:27~14:00","","여수엑스포역","화장·준비",""],["14:00~14:15","여수엑스포역","숙소(짐 맡기기)","이동","택시"],
-      ["14:15~14:20","","숙소(짐 맡기기)","짐 맡기기",""],["14:20~14:35","숙소(짐 맡기기)","이순신광장 점심 권역","이동","택시"],
-      ["14:35~15:35","","이순신광장 점심 권역","점심","",[["순이네밥상","돌게장정식 · 갈치조림"],["진남옥","한우뭇국 · 수육전골"],["팔계촌","제육볶음 · 고등어쌈밥"],["순심원","해물철판짜장 · 탕수육"]]],["15:35~15:40","이순신광장 점심 권역","이순신광장 먹거리 골목","이동","도보"],
-      ["15:40~16:20","","이순신광장 먹거리 골목","간식","",[["염전의봄·옥수당","소금빵 · 옥수샌드"],["3미여수딸기찹쌀떡","딸기찹쌀떡"],["갓버터도나스","갓버터도나스 · 옥수수도나스"],["아이스크림옥","수제 젤라토"],["가릿랑고스","돌산갓랑고스 · 애플랑고스"],["로타리분식","떡볶이 · 갈비튀김"],["구봉만두","삼합만두 · 꾼만두"],["바다김밥 중앙본점","갓참치김밥 · 아귀채김밥"]]],
-      ["16:20~16:25","이순신광장 먹거리 골목","이순신광장","이동","도보"],["16:25~16:55","","이순신광장","구경",""],
-      ["16:55~17:55","이순신광장","고소동 벽화마을","구경","도보"],["17:55~18:15","고소동 벽화마을","하멜등대","이동","도보"],
-      ["18:15~18:45","","하멜등대","구경","빨간 등대"],["18:45~19:00","하멜등대","하멜로 저녁 권역","이동","도보"],
-      ["19:00~20:30","","하멜로 저녁 권역","저녁","",[["오팔공","조개구이"],["보물섬","해물전복물회 · 전복죽"],["돌문어상회","돌문어삼합 · 돌문어라면"]]],["20:30~21:15","하멜로 저녁 권역","낭만포차·종포해양공원","여수 밤바다 산책",""],
-      ["21:15~21:35","종포해양공원","숙소(복귀)","이동","택시"],["21:35","","숙소(복귀)","숙소 복귀·체크인",""]
+      ["13:27~14:00","","여수엑스포역","준비",""],["14:00~14:10","여수엑스포역","순이네밥상","이동","택시"],
+      ["14:10~15:10","","순이네밥상","점심 식사","돌게장정식 · 갈치조림"],["15:10~15:25","순이네밥상","숙소(체크인)","이동","택시"],
+      ["15:25~15:40","","숙소(체크인)","체크인·짐 정리",""],["15:40~16:40","","숙소 수영장","수영","1시간"],
+      ["16:40~17:10","","숙소 사우나","사우나","30분"],["17:10~17:40","","숙소","준비",""],
+      ["17:40~18:00","숙소","이순신광장","이동","택시"],["18:00~18:30","","이순신광장","구경","30분",[["염전의봄·옥수당","소금빵 · 옥수샌드"],["3미여수딸기찹쌀떡","딸기찹쌀떡"],["갓버터도나스","갓버터도나스 · 옥수수도나스"],["아이스크림옥","수제 젤라토"],["가릿랑고스","돌산갓랑고스 · 애플랑고스"],["로타리분식","떡볶이 · 갈비튀김"],["구봉만두","삼합만두 · 꾼만두"],["바다김밥 중앙본점","갓참치김밥 · 아귀채김밥"]],null,"간식"],
+      ["18:30~18:40","이순신광장","고소동 벽화마을","이동","도보"],["18:40~19:10","","고소동 벽화마을","구경","30분"],
+      ["19:10~19:30","고소동 벽화마을","하멜등대","이동","도보"],["19:30~20:00","","하멜등대","구경","30분"],
+      ["20:00~21:30","하멜등대","하멜로 저녁 권역","저녁 식사","",[["오팔공","조개구이"],["보물섬","해물전복물회 · 전복죽"],["돌문어상회","돌문어삼합 · 돌문어라면"]]],
+      ["21:30~22:00","","낭만포차·종포해양공원","구경","30분"],["22:00~22:20","종포해양공원","숙소(복귀)","이동","택시"],
+      ["22:20","","숙소(복귀)","숙소 복귀·휴식",""]
     ]
   },
   sun: {
     isoDate: "2026-09-06", date: "9월 6일", day: "일요일", theme: "오동도·아쿠아리움", color: "#206c4c",
-    summary: "숙소(출발) → 오동도 → 오동동김밥 → 아쿠아플라넷 → 아르떼뮤지엄 → 해상케이블카 → 돌산공원 → 바담식당 → 숙소(복귀)",
-    note: "케이블카는 편도로 돌산에 넘어가요. 돌산공원에서 바담식당, 숙소까지 같은 방향으로 이어져 되돌아가는 구간이 없습니다.",
-    points: [["숙소(출발)",127.75165,34.73155],["오동도",127.76709,34.74504],["오동동김밥",127.7508,34.74299],["아쿠아플라넷",127.74862,34.74628],["아르떼뮤지엄",127.74564,34.75087],["자산 케이블카역",127.75295,34.74033],["돌산공원",127.73965,34.73031],["바담식당",127.74434,34.73297],["숙소(복귀)",127.75165,34.73155]],
+    summary: "숙소(출발) → 오동도 → 오동동김밥 → 아쿠아플라넷 → 아르떼뮤지엄 → 해상케이블카 → 돌산공원 → 숙소(수영·사우나) → 바담식당 → 숙소(복귀)",
+    note: "케이블카 편도로 돌산에 넘어온 뒤 숙소 수영과 사우나를 이용하고 저녁 식사를 해요.",
+    points: [["숙소(출발)",127.75165,34.73155],["오동도",127.76709,34.74504],["오동동김밥",127.7508,34.74299],["아쿠아플라넷",127.74862,34.74628],["아르떼뮤지엄",127.74564,34.75087],["자산 케이블카역",127.75295,34.74033],["돌산공원",127.73965,34.73031],["숙소(수영·사우나)",127.75165,34.73155],["바담식당",127.74434,34.73297],["숙소(복귀)",127.75165,34.73155]],
     segments: [
       {mode:"drive",points:[0,1]},
       {mode:"foot",points:[1,2,3,4,5]},
       {mode:"cable",points:[5,6]},
       {mode:"drive",points:[6,7]},
-      {mode:"foot",points:[7,8]}
+      {mode:"foot",points:[7,8,9]}
     ],
     rows: [
-      ["09:30","","숙소(출발)","기상",""],["09:30~10:30","","숙소(출발)","준비",""],["10:30~10:50","숙소(출발)","오동도 입구","이동","택시"],
-      ["10:50~12:20","","오동도","산책·구경","입구 복귀 포함"],["12:20~12:30","오동도 입구","오동동김밥","이동","도보"],
-      ["12:30~13:30","","오동동김밥","점심","간장게장·갓김치김밥"],["13:30~13:40","오동동김밥","아쿠아플라넷","이동","도보"],
-      ["13:40~15:50","","아쿠아플라넷","관람",""],["15:50~16:00","아쿠아플라넷","아르떼뮤지엄","이동","도보"],
-      ["16:00~17:30","","아르떼뮤지엄","관람",""],["17:30~17:50","아르떼뮤지엄","자산 케이블카역","이동","도보"],
-      ["17:50~18:30","","자산 케이블카역","발권·대기","편도"],["18:30~18:45","자산 케이블카역","돌산 케이블카역","해상케이블카","야경"],
-      ["18:45~19:20","","돌산공원","구경","돌산대교·야경"],["19:20~19:30","돌산공원","바담식당","이동","택시·숙소 방향"],
-      ["19:30~21:00","","바담식당","저녁","서대회무침·갈치구이"],["21:00~21:15","바담식당","숙소(복귀)","이동","도보 약 760m"],["21:15","","숙소(복귀)","숙소 복귀·휴식",""]
+      ["10:00","","숙소(출발)","기상",""],["10:00~11:00","","숙소(출발)","준비",""],["11:00~11:20","숙소(출발)","오동도 입구","이동","택시"],
+      ["11:20~12:20","","오동도","구경","1시간·입구 복귀 포함"],["12:20~12:30","오동도 입구","오동동김밥","이동","도보"],
+      ["12:30~13:30","","오동동김밥","점심 식사","간장게장·갓김치김밥"],["13:30~13:40","오동동김밥","아쿠아플라넷","이동","도보"],
+      ["13:40~15:10","","아쿠아플라넷","관람","1시간 30분"],["15:10~15:20","아쿠아플라넷","아르떼뮤지엄","이동","도보"],
+      ["15:20~16:20","","아르떼뮤지엄","관람","1시간"],["16:20~16:40","아르떼뮤지엄","자산 케이블카역","이동","도보"],
+      ["16:40~17:20","","자산 케이블카역","발권·대기","편도"],["17:20~17:35","자산 케이블카역","돌산 케이블카역","해상케이블카","약 15분"],
+      ["17:35~18:05","","돌산공원","구경","30분·돌산대교 전망"],["18:05~18:15","돌산공원","숙소(수영·사우나)","이동","택시"],
+      ["18:15~19:15","","숙소 수영장","수영","1시간"],["19:15~19:45","","숙소 사우나","사우나","30분"],
+      ["19:45~20:15","","숙소","준비",""],["20:15~20:25","숙소","바담식당","이동","도보"],
+      ["20:25~21:55","","바담식당","저녁 식사","서대회무침 · 갈치구이"],["21:55~22:05","바담식당","숙소(복귀)","이동","도보"],
+      ["22:05","","숙소(복귀)","숙소 복귀·휴식",""]
     ]
   },
   mon: {
     isoDate: "2026-09-07", date: "9월 7일", day: "월요일", theme: "엑스포역·귀가", color: "#206c4c",
-    summary: "숙소 → 미가칼국수 또는 엑스포식육식당 → 레인블러 → 여수엑스포역",
-    note: "점심은 당일 입맛에 따라 선택해도 돼요. 두 식당 모두 엑스포역 권역이라 이후 카페와 귀가 동선은 같습니다.",
-    points: [["숙소",127.75165,34.73155],["미가칼국수",127.74343,34.75146],["엑스포식육식당",127.74402,34.7524],["레인블러",127.7414,34.75501],["여수엑스포역",127.74924,34.75551]],
+    summary: "숙소 → 미가칼국수 → 레인블러 → 여수엑스포역",
+    note: "체크아웃 뒤 엑스포역 권역에서 점심과 카페를 이용하고 기차를 타요.",
+    points: [["숙소",127.75165,34.73155],["미가칼국수",127.74343,34.75146],["레인블러",127.7414,34.75501],["여수엑스포역",127.74924,34.75551]],
     segments: [
       {mode:"drive",points:[0,1]},
-      {mode:"drive",points:[0,2]},
-      {mode:"foot",points:[1,3,4]},
-      {mode:"foot",points:[2,3,4]}
+      {mode:"foot",points:[1,2,3]}
     ],
-    distanceRoutes: [[0,2],[1,3]],
     rows: [
       ["10:00","","숙소","기상",""],["10:00~11:00","","숙소","준비",""],["11:00","","숙소","체크아웃",""],
-      ["11:00~11:20","숙소","엑스포역 권역","이동","택시"],["11:20~12:20","","미가칼국수 또는 엑스포식육식당","점심","",[["미가칼국수","칼국수"],["엑스포식육식당","제육볶음 · 찌개"]]],
+      ["11:00~11:20","숙소","미가칼국수","이동","택시"],["11:20~12:20","","미가칼국수","점심 식사","칼국수"],
       ["12:20~12:30","점심 식당","레인블러","이동","도보"],["12:30~13:30","","레인블러","카페",""],
       ["13:30~13:40","레인블러","여수엑스포역","이동","도보"],["13:40~14:32","","여수엑스포역","승차 준비",""],
       ["14:32~17:23","여수엑스포역","","함께 출발, 각자의 집으로","",null,{journeys:[["광명행","14:32","여수엑스포역","17:23","광명역","익산역 환승"],["동탄행","14:32","여수엑스포역","17:17","동탄역",""]]}]
@@ -658,7 +629,7 @@ function renderSchedule(plan, startIdx, endIdx) {
   const body = document.getElementById("schedule-body");
   body.replaceChildren();
   rows.forEach(row => {
-    const [time, origin, dest, activity, note, candidates, travel] = row;
+    const [time, origin, dest, activity, note, candidates, travel, candidateLabel] = row;
     const tr = document.createElement("tr");
     const td = document.createElement("td");
     const timeText = document.createElement("span");
@@ -747,7 +718,7 @@ function renderSchedule(plan, startIdx, endIdx) {
       const closeLabel = document.createElement("span");
       const list = document.createElement("div");
       details.className = "candidate-details";
-      summaryTitle.textContent = `${activity} 후보 ${candidates.length}곳`;
+      summaryTitle.textContent = `${candidateLabel || activity} 후보 ${candidates.length}곳`;
       toggle.className = "candidate-toggle";
       openLabel.className = "candidate-open-label";
       openLabel.textContent = "펼쳐보기";
@@ -862,58 +833,16 @@ function focusCurrentSchedule() {
   }));
 }
 
-function renderBookings() {
-  const bookings = activeTrip.bookings ?? [];
-  const completedCount = bookings.filter(booking => booking.status === "done").length;
-  document.getElementById("booking-progress").textContent = `${bookings.length}개 중 ${completedCount}개 완료`;
-  const list = document.getElementById("booking-list");
-  list.replaceChildren();
-  bookings.forEach(booking => {
-    const item = document.createElement("article");
-    const head = document.createElement("div");
-    const titleGroup = document.createElement("div");
-    const kind = document.createElement("span");
-    const name = document.createElement("h3");
-    const status = document.createElement("span");
-    const details = document.createElement("div");
-    item.className = "booking-item";
-    head.className = "booking-item-head";
-    kind.className = "booking-kind";
-    kind.textContent = booking.kind;
-    name.className = "booking-name";
-    name.textContent = booking.name;
-    status.className = `booking-status ${booking.status}`;
-    status.textContent = booking.statusLabel;
-    details.className = "booking-details";
-    booking.details.forEach(detail => {
-      const line = document.createElement("span");
-      line.className = "booking-detail";
-      line.textContent = detail;
-      details.append(line);
-    });
-    titleGroup.append(kind, name);
-    head.append(titleGroup, status);
-    item.append(head, details);
-    list.append(item);
-  });
-}
-
 function setActiveView(view) {
   activeView = view;
   const isSchedule = view === "schedule";
   const isMap = view === "map";
-  const isBooking = view === "booking";
   document.getElementById("schedule-panel").hidden = !isSchedule;
   document.getElementById("map-panel").hidden = !isMap;
-  document.getElementById("booking-panel").hidden = !isBooking;
-  dayTabs.hidden = isBooking;
-  document.querySelector(".day-overview").hidden = isBooking;
   document.getElementById("view-schedule").classList.toggle("active", isSchedule);
   document.getElementById("view-map").classList.toggle("active", isMap);
-  document.getElementById("view-booking").classList.toggle("active", isBooking);
   document.getElementById("view-schedule").setAttribute("aria-selected", isSchedule);
   document.getElementById("view-map").setAttribute("aria-selected", isMap);
-  document.getElementById("view-booking").setAttribute("aria-selected", isBooking);
   if (isMap) {
     setTimeout(() => {
       map.invalidateSize();
@@ -966,7 +895,6 @@ function selectTrip(id) {
     button.setAttribute("aria-pressed", active);
   });
   renderDayTabs();
-  renderBookings();
   refreshTripDistance(activeTrip);
 }
 
@@ -989,7 +917,6 @@ routeAll.addEventListener("click", showAllSchedule);
 routeNow.addEventListener("click", focusCurrentSchedule);
 document.getElementById("view-schedule").addEventListener("click", () => setActiveView("schedule"));
 document.getElementById("view-map").addEventListener("click", () => setActiveView("map"));
-document.getElementById("view-booking").addEventListener("click", () => setActiveView("booking"));
 document.getElementById("back-to-top").addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
 window.addEventListener("scroll", () => document.getElementById("back-to-top").classList.toggle("show", window.scrollY > 500), { passive: true });
 
