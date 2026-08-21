@@ -74,16 +74,31 @@ h1 { margin:0; font-family:"Segoe UI Semibold","Segoe UI",sans-serif; font-size:
 .day-feedback { margin:7px 1px 0; color:var(--focus); font-size:11px; line-height:1.4; }
 .day-feedback:empty { display:none; }
 .legend { display:none; }
-.map-wrap { overflow:hidden; border:1px solid var(--border); border-radius:6px; background:var(--input-bg); }
+.map-wrap { position:relative; overflow:hidden; border:1px solid var(--border); border-radius:6px; background:var(--input-bg); }
 #route-map { width:100%; height:440px; background:#dceef1; }
 .route-pin { display:flex; align-items:center; justify-content:center; width:28px; height:28px; border:2px solid var(--text-primary); border-radius:50%; background:var(--pin-color); color:var(--text-primary); font-size:12px; font-weight:700; box-shadow:0 3px 8px #0008; }
 .route-pin.is-combined { width:40px; border-radius:15px; }
 .leaflet-tooltip.place-label { padding:3px 5px; border:1px solid var(--border); border-radius:4px; background:#191d20e8; color:var(--text-primary); font-size:10px; font-weight:600; box-shadow:0 1px 5px #0008; }
 .leaflet-tooltip.place-label::before { display:none; }
 .leaflet-control-attribution { font-size:9px; }
+.map-place-card { position:absolute; z-index:600; right:8px; bottom:24px; left:8px; padding:10px 11px; border:1px solid var(--accent); border-radius:7px; background:#111517f2; box-shadow:0 5px 18px #000b; }
+.map-place-card[hidden] { display:none; }
+.map-place-heading { display:flex; align-items:center; gap:7px; }
+.map-place-number { flex:0 0 auto; padding:3px 7px; border-radius:999px; background:var(--selection); color:var(--focus); font-size:10px; font-weight:800; }
+.map-place-name { min-width:0; color:var(--text-primary); font-size:14px; font-weight:700; line-height:1.35; }
+.map-place-details { display:grid; gap:3px; margin-top:7px; padding-top:7px; border-top:1px solid var(--border); }
+.map-place-detail { color:var(--text-muted); font-size:11px; line-height:1.4; }
 .route-summary { margin:12px 2px 0; color:var(--text-primary); font-size:13px; font-weight:600; line-height:1.6; }
 .route-note { margin:8px 0 0; padding:10px 11px; border-left:3px solid var(--accent); background:var(--input-bg); color:var(--text-muted); font-size:12px; line-height:1.55; }
 .map-caption { margin:7px 2px 0; color:#e8c873; font-size:10px; line-height:1.4; }
+.today-brief { display:grid; gap:8px; width:100%; margin-top:8px; padding:10px 11px; border:1px solid var(--accent); border-radius:7px; background:var(--card-bg); color:var(--text-primary); text-align:left; cursor:pointer; }
+.today-brief[hidden] { display:none; }
+.today-brief-row { display:grid; grid-template-columns:36px minmax(0,1fr); gap:8px; align-items:start; }
+.today-brief-row + .today-brief-row { padding-top:8px; border-top:1px solid var(--border); }
+.today-brief-badge { padding:3px 5px; border-radius:999px; background:var(--selection); color:var(--focus); font-size:9px; font-weight:800; text-align:center; }
+.today-brief-row:first-child .today-brief-badge { background:var(--focus); color:#08130e; }
+.today-brief-title { display:block; overflow:hidden; font-size:13px; font-weight:700; line-height:1.35; text-overflow:ellipsis; white-space:nowrap; }
+.today-brief-detail { display:block; margin-top:2px; color:var(--text-muted); font-size:10.5px; line-height:1.4; }
 .panel-meta { min-height:14px; margin-bottom:7px; color:var(--text-muted); font-size:10.5px; text-align:right; }
 .table-wrap { border:0; }
 table,tbody { display:block; width:100%; }
@@ -167,6 +182,16 @@ tbody tr.movement-row.is-current { border:1px solid var(--focus); background:var
         <p class="day-feedback" id="day-feedback" aria-live="polite"></p>
       </div>
     </section>
+    <button type="button" class="today-brief" id="today-brief" hidden aria-label="현재 일정 카드로 이동">
+      <span class="today-brief-row">
+        <span class="today-brief-badge">지금</span>
+        <span><strong class="today-brief-title" id="today-current-title"></strong><small class="today-brief-detail" id="today-current-detail"></small></span>
+      </span>
+      <span class="today-brief-row" id="today-next-row">
+        <span class="today-brief-badge">다음</span>
+        <span><strong class="today-brief-title" id="today-next-title"></strong><small class="today-brief-detail" id="today-next-detail"></small></span>
+      </span>
+    </button>
     <div class="view-switch" role="tablist" aria-label="여행 정보 보기">
       <button type="button" id="view-schedule" role="tab" aria-controls="schedule-panel">일정</button>
       <button type="button" id="view-map" role="tab" aria-controls="map-panel">지도</button>
@@ -175,6 +200,10 @@ tbody tr.movement-row.is-current { border:1px solid var(--focus); background:var
     <section class="card route-card view-panel" id="map-panel" role="tabpanel" aria-labelledby="view-map">
       <div class="map-wrap">
         <div id="route-map" role="img" aria-label="날짜별 여수 여행 동선 지도"></div>
+        <div class="map-place-card" id="map-place-card" aria-live="polite" hidden>
+          <div class="map-place-heading"><span class="map-place-number" id="map-place-number"></span><span class="map-place-name" id="map-place-name"></span></div>
+          <div class="map-place-details" id="map-place-details"></div>
+        </div>
       </div>
       <p class="route-summary" id="route-summary"></p>
       <p class="route-note" id="route-note"></p>
@@ -283,6 +312,8 @@ const routeEnd = document.getElementById("route-end");
 const routeActions = document.querySelector(".route-actions");
 const routeNow = document.getElementById("route-now");
 const routeAll = document.getElementById("route-all");
+const todayBrief = document.getElementById("today-brief");
+const mapPlaceCard = document.getElementById("map-place-card");
 let routeRequestId = 0;
 let activePlan;
 let activeDayKey;
@@ -450,6 +481,7 @@ async function drawMap(plan, startIdx, endIdx) {
   const bounds = L.latLngBounds();
   const segments = filteredSegments(plan, startIdx, endIdx);
   routeLayers.clearLayers();
+  mapPlaceCard.hidden = true;
   status.hidden = true;
   status.textContent = "";
 
@@ -476,7 +508,10 @@ async function drawMap(plan, startIdx, endIdx) {
     const directionIndex = indexes[0];
     const icon = L.divIcon({ className: "", html: `<span class="route-pin${isCombined ? " is-combined" : ""}" style="--pin-color:${plan.color}">${numbers}</span>`, iconSize: [width, 30], iconAnchor: [width / 2, 15] });
     const marker = L.marker([lat, lon], { icon }).bindTooltip(labels, { permanent: isEndpoint, direction: directionIndex % 2 ? "bottom" : "top", className: "place-label", offset: [0, directionIndex % 2 ? 12 : -12] });
-    marker.on("click", () => marker.openTooltip());
+    marker.on("click", () => {
+      marker.openTooltip();
+      showMapPlaceCard(plan, indexes);
+    });
     marker.addTo(routeLayers);
   });
 
@@ -558,6 +593,69 @@ function pointRowIndexes(plan) {
     if (rowIdx >= 0) searchIdx = rowIdx;
     return rowIdx;
   });
+}
+
+function rowBriefContent(row, movementDestinationOnly = false) {
+  const [time, origin, dest, activity, note] = row;
+  const isMovement = activity.startsWith("이동");
+  if (isMovement) {
+    return {
+      title: movementDestinationOnly ? dest : `${origin} → ${dest}`,
+      detail: [time, note, activity.replace(/^이동·?/, ""), durationText(time)].filter(Boolean).join(" · ")
+    };
+  }
+  return {
+    title: dest || origin || activity,
+    detail: [time, activity, note].filter(Boolean).join(" · ")
+  };
+}
+
+function updateTodayBrief(now = new Date()) {
+  const currentRow = activePlan ? findCurrentScheduleRow(activePlan, now) : null;
+  if (!currentRow) {
+    todayBrief.hidden = true;
+    return;
+  }
+
+  const currentIndex = activePlan.rows.indexOf(currentRow);
+  const nextRow = activePlan.rows[currentIndex + 1];
+  const current = rowBriefContent(currentRow);
+  document.getElementById("today-current-title").textContent = current.title;
+  document.getElementById("today-current-detail").textContent = current.detail;
+
+  const nextContainer = document.getElementById("today-next-row");
+  nextContainer.hidden = !nextRow;
+  if (nextRow) {
+    const next = rowBriefContent(nextRow, true);
+    document.getElementById("today-next-title").textContent = next.title;
+    document.getElementById("today-next-detail").textContent = next.detail;
+  }
+  todayBrief.hidden = false;
+}
+
+function showMapPlaceCard(plan, indexes) {
+  const names = [...new Set(indexes.map(index => plan.points[index][0]))];
+  const rowIndexes = pointRowIndexes(plan);
+  const heading = document.getElementById("map-place-name");
+  const details = document.getElementById("map-place-details");
+  const link = createNaverMapLink(plan, names[0]);
+  link.classList.add("map-place-name");
+  link.textContent = names.join(" / ");
+  link.id = "map-place-name";
+  link.setAttribute("aria-label", `${names.join(" / ")} 네이버지도에서 열기`);
+  heading.replaceWith(link);
+  document.getElementById("map-place-number").textContent = indexes.map(index => index + 1).join("·");
+  details.replaceChildren();
+  indexes.forEach(index => {
+    const row = plan.rows[rowIndexes[index]];
+    if (!row)
+      return;
+    const detail = document.createElement("span");
+    detail.className = "map-place-detail";
+    detail.textContent = `${index + 1}. ${[row[0], row[3], row[4]].filter(Boolean).join(" · ")}`;
+    details.append(detail);
+  });
+  mapPlaceCard.hidden = false;
 }
 
 function selectedScheduleRows(plan, startIdx, endIdx) {
@@ -795,15 +893,17 @@ function drawSelectedRoute() {
   renderSchedule(activePlan, startIdx, endIdx);
   drawMap(activePlan, startIdx, endIdx);
   updateRouteActions();
+  updateTodayBrief();
   saveUiState();
 }
 
 function updateRouteActions(now = new Date()) {
   const todayKey = localDateKey(now);
   const isTripDay = Object.values(activeTrip.days).some(plan => plan.isoDate === todayKey);
+  const isActiveDayToday = activePlan.isoDate === todayKey;
   const isFullRoute = Number(routeStart.value) === 0
     && Number(routeEnd.value) === activePlan.points.length - 1;
-  routeNow.hidden = !isTripDay;
+  routeNow.hidden = !isTripDay || isActiveDayToday;
   routeAll.hidden = isFullRoute;
   const visibleActionCount = [routeNow, routeAll].filter(button => !button.hidden).length;
   routeActions.hidden = visibleActionCount === 0;
@@ -951,10 +1051,18 @@ routeStart.addEventListener("change", () => {
 routeEnd.addEventListener("change", drawSelectedRoute);
 routeAll.addEventListener("click", showAllSchedule);
 routeNow.addEventListener("click", focusCurrentSchedule);
+todayBrief.addEventListener("click", focusCurrentSchedule);
+map.on("click", () => { mapPlaceCard.hidden = true; });
 document.getElementById("view-schedule").addEventListener("click", () => setActiveView("schedule"));
 document.getElementById("view-map").addEventListener("click", () => setActiveView("map"));
 document.getElementById("back-to-top").addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
 window.addEventListener("scroll", () => document.getElementById("back-to-top").classList.toggle("show", window.scrollY > 500), { passive: true });
+setInterval(() => {
+  updateTodayBrief();
+  updateRouteActions();
+  if (activePlan?.isoDate === localDateKey(new Date()))
+    renderSchedule(activePlan, Number(routeStart.value), Number(routeEnd.value));
+}, 60000);
 
 const savedUiState = loadUiState();
 const initialTrip = trips.find(trip => trip.id === savedUiState?.tripId) ?? trips[0];
