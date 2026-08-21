@@ -57,6 +57,10 @@ export function validateFootprints(data) {
     const path = `cities[${index}]`;
     assert(isText(city?.id), `${path}.id가 필요합니다.`);
     assert(isText(city?.name), `${path}.name이 필요합니다.`);
+    if (city.pathIds !== undefined)
+      assert(Array.isArray(city.pathIds) && city.pathIds.every(isText), `${path}.pathIds가 올바르지 않습니다.`);
+    if (city.boundaryPrefixes !== undefined)
+      assert(Array.isArray(city.boundaryPrefixes) && city.boundaryPrefixes.every(isText), `${path}.boundaryPrefixes가 올바르지 않습니다.`);
     assert(!cityIds.has(city.id), `중복된 도시 id입니다: ${city.id}`);
     cityIds.add(city.id);
   });

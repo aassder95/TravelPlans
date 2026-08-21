@@ -80,11 +80,11 @@
     { "id": "incheon", "name": "인천", "provinceId": "인천광역시", "pathIds": ["인천광역시"] },
     { "id": "daejeon", "name": "대전", "provinceId": "대전광역시", "pathIds": ["대전광역시"] },
     { "id": "ulsan", "name": "울산", "provinceId": "울산광역시", "pathIds": ["울산광역시"] },
-    { "id": "suwon", "name": "수원", "provinceId": "경기도", "overlayId": "suwon" },
-    { "id": "anyang", "name": "안양", "provinceId": "경기도", "overlayId": "anyang" },
-    { "id": "hwaseong", "name": "화성", "provinceId": "경기도", "overlayId": "hwaseong" },
-    { "id": "jeonju", "name": "전주", "provinceId": "전라북도", "overlayId": "jeonju" },
-    { "id": "yeosu", "name": "여수", "provinceId": "전라남도", "overlayId": "yeosu" },
+    { "id": "suwon", "name": "수원", "provinceId": "경기도", "boundaryPrefixes": ["수원시 "] },
+    { "id": "anyang", "name": "안양", "provinceId": "경기도", "boundaryPrefixes": ["안양시 "] },
+    { "id": "hwaseong", "name": "화성", "provinceId": "경기도", "boundaryPrefixes": ["화성시"] },
+    { "id": "jeonju", "name": "전주", "provinceId": "전라북도", "boundaryPrefixes": ["전주시 "] },
+    { "id": "yeosu", "name": "여수", "provinceId": "전라남도", "boundaryPrefixes": ["여수시"] },
     { "id": "fukuoka", "name": "후쿠오카" }
   ]
 }

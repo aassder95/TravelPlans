@@ -7,4 +7,4 @@
 - 원본 저장소: https://github.com/swcho/korea-maps
 - 사용 파일: 전국 시도 경계 SVG와 경기·전북·전남 시군구 경계 SVG
 
-`city-overlays.json`은 홈 지도에서 사용하는 수원·안양·화성·전주·여수 경계만 추출한 데이터입니다.
+`city-overlays.json`은 홈 지도의 확대 단계에서 표시하는 전국 17개 시·도의 시·군·구 경계를 추출한 데이터입니다.

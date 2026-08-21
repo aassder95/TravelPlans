@@ -34,12 +34,19 @@
           <span><small>국내</small><strong id="home-domestic-count"></strong></span>
           <span><small>해외</small><strong id="home-overseas-count"></strong></span>
         </div>
-        <div id="home-map" class="home-map" aria-live="polite"></div>
+        <div class="home-map-wrap">
+          <div id="home-map" class="home-map" aria-live="polite"></div>
+          <div class="home-map-controls" aria-label="지도 확대와 축소">
+            <button type="button" id="home-map-zoom-in" aria-label="지도 확대">＋</button>
+            <button type="button" id="home-map-zoom-out" aria-label="지도 축소">－</button>
+            <button type="button" id="home-map-reset">전체</button>
+          </div>
+        </div>
         <div class="home-map-legend" aria-label="지도 범례">
           <span><i class="is-visited"></i>발자국</span>
           <span><i class="is-planned"></i>여행 예정</span>
         </div>
-        <p class="home-map-hint">색칠된 도시를 누르면 그곳의 기록만 볼 수 있어요.</p>
+        <p class="home-map-hint">두 손가락 또는 ＋/－로 확대해요. 확대하면 시·군·구 경계가 나타나요.</p>
       </section>
 
       <section class="card footprint-list-card">
