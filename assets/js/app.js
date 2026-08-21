@@ -10,6 +10,8 @@ import {
   formatDistance,
   invalidateMapSize
 } from "./map.js";
+import { loadTrips } from "./data-loader.js";
+import { loadUiState, saveUiState as persistUiState } from "./ui-state.js";
 
 const tripTabs = document.querySelector(".trip-tabs");
 const dayTabs = document.querySelector(".day-tabs");
@@ -20,7 +22,6 @@ const routeNow = document.getElementById("route-now");
 const routeAll = document.getElementById("route-all");
 const todayBrief = document.getElementById("today-brief");
 const appStatus = document.getElementById("app-status");
-const uiStateKey = "travelPlans.uiState.v1";
 
 let trips = [];
 let activeTrip;
@@ -30,65 +31,16 @@ let activeView = "schedule";
 let feedbackTimer;
 let isRestoringUiState = true;
 
-function validateTrip(trip, expectedId) {
-  if (trip?.version !== 1)
-    throw new Error(`지원하지 않는 여행 데이터 버전입니다: ${expectedId}`);
-  if (!trip.id || trip.id !== expectedId || !trip.tab || !trip.color || !trip.days)
-    throw new Error(`여행 기본 정보가 올바르지 않습니다: ${expectedId}`);
-
-  Object.entries(trip.days).forEach(([dayKey, plan]) => {
-    if (!plan.isoDate || !Array.isArray(plan.points) || plan.points.length < 2
-      || !Array.isArray(plan.segments) || !Array.isArray(plan.rows))
-      throw new Error(`날짜별 일정 정보가 올바르지 않습니다: ${expectedId}/${dayKey}`);
-  });
-  return trip;
-}
-
-async function loadTrips() {
-  const manifestUrl = new URL("../../data/trips.json", import.meta.url);
-  const response = await fetch(manifestUrl, { cache: "no-store" });
-  if (!response.ok)
-    throw new Error(`여행 목록을 불러오지 못했습니다. (HTTP ${response.status})`);
-
-  const manifest = await response.json();
-  if (manifest?.version !== 1 || !Array.isArray(manifest.trips) || manifest.trips.length === 0)
-    throw new Error("여행 목록 형식이 올바르지 않습니다.");
-
-  return Promise.all(manifest.trips.map(async entry => {
-    if (!entry?.id || !entry.file)
-      throw new Error("여행 목록에 id 또는 file이 없습니다.");
-    const tripUrl = new URL(entry.file, manifestUrl);
-    const tripResponse = await fetch(tripUrl, { cache: "no-store" });
-    if (!tripResponse.ok)
-      throw new Error(`${entry.id} 일정을 불러오지 못했습니다. (HTTP ${tripResponse.status})`);
-    return validateTrip(await tripResponse.json(), entry.id);
-  }));
-}
-
-function loadUiState() {
-  try {
-    const state = JSON.parse(localStorage.getItem(uiStateKey));
-    return state && typeof state === "object" ? state : null;
-  } catch {
-    return null;
-  }
-}
-
 function saveUiState() {
   if (isRestoringUiState || !activeTrip || !activePlan || !activeDayKey)
     return;
-
-  try {
-    localStorage.setItem(uiStateKey, JSON.stringify({
-      tripId: activeTrip.id,
-      dayKey: activeDayKey,
-      view: activeView,
-      startIdx: Number(routeStart.value),
-      endIdx: Number(routeEnd.value)
-    }));
-  } catch {
-    // 저장소 사용이 제한된 브라우저에서도 일정표 자체는 그대로 동작한다.
-  }
+  persistUiState({
+    tripId: activeTrip.id,
+    dayKey: activeDayKey,
+    view: activeView,
+    startIdx: Number(routeStart.value),
+    endIdx: Number(routeEnd.value)
+  });
 }
 
 function refreshDayDistance(plan) {
@@ -103,7 +55,7 @@ function refreshDayDistance(plan) {
 async function refreshTripDistance(trip) {
   const distance = document.getElementById("trip-distance");
   distance.textContent = "이번 여행의 발자국 · 거리 계산 중…";
-  const distances = await Promise.all(Object.values(trip.days).map(calculateDayDistance));
+  const distances = await Promise.all(trip.days.map(calculateDayDistance));
   const total = distances.reduce((sum, value) => ({
     min: sum.min + value.min,
     max: sum.max + value.max
@@ -113,10 +65,10 @@ async function refreshTripDistance(trip) {
 }
 
 function selectedRouteSummary(plan, startIdx, endIdx) {
-  if (startIdx === 0 && endIdx === plan.points.length - 1)
+  if (startIdx === 0 && endIdx === plan.visits.length - 1)
     return plan.summary;
-  return plan.points.slice(startIdx, endIdx + 1)
-    .map(([name], idx) => `${startIdx + idx + 1}. ${name}`)
+  return plan.visits.slice(startIdx, endIdx + 1)
+    .map((visit, idx) => `${startIdx + idx + 1}. ${visit.name}`)
     .join(" → ");
 }
 
@@ -156,10 +108,10 @@ function drawSelectedRoute() {
 
 function updateRouteActions(now = new Date()) {
   const todayKey = localDateKey(now);
-  const isTripDay = Object.values(activeTrip.days).some(plan => plan.isoDate === todayKey);
+  const isTripDay = activeTrip.days.some(plan => plan.isoDate === todayKey);
   const isActiveDayToday = activePlan.isoDate === todayKey;
   const isFullRoute = Number(routeStart.value) === 0
-    && Number(routeEnd.value) === activePlan.points.length - 1;
+    && Number(routeEnd.value) === activePlan.visits.length - 1;
   routeNow.hidden = !isTripDay || isActiveDayToday;
   routeAll.hidden = isFullRoute;
   const visibleActionCount = [routeNow, routeAll].filter(button => !button.hidden).length;
@@ -169,10 +121,10 @@ function updateRouteActions(now = new Date()) {
 
 function fillEndOptions(startIdx, selectedEndIdx) {
   routeEnd.replaceChildren();
-  for (let idx = startIdx + 1; idx < activePlan.points.length; idx++) {
+  for (let idx = startIdx + 1; idx < activePlan.visits.length; idx++) {
     const option = document.createElement("option");
     option.value = idx;
-    option.textContent = `${idx + 1}. ${activePlan.points[idx][0]}`;
+    option.textContent = `${idx + 1}. ${activePlan.visits[idx].name}`;
     routeEnd.append(option);
   }
   routeEnd.value = selectedEndIdx > startIdx ? selectedEndIdx : startIdx + 1;
@@ -181,19 +133,19 @@ function fillEndOptions(startIdx, selectedEndIdx) {
 function fillRouteOptions(plan) {
   activePlan = plan;
   routeStart.replaceChildren();
-  plan.points.slice(0, -1).forEach(([name], idx) => {
+  plan.visits.slice(0, -1).forEach((visit, idx) => {
     const option = document.createElement("option");
     option.value = idx;
-    option.textContent = `${idx + 1}. ${name}`;
+    option.textContent = `${idx + 1}. ${visit.name}`;
     routeStart.append(option);
   });
   routeStart.value = 0;
-  fillEndOptions(0, plan.points.length - 1);
+  fillEndOptions(0, plan.visits.length - 1);
 }
 
 function showAllSchedule() {
   routeStart.value = 0;
-  fillEndOptions(0, activePlan.points.length - 1);
+  fillEndOptions(0, activePlan.visits.length - 1);
   drawSelectedRoute();
 }
 
@@ -206,11 +158,11 @@ function showFeedback(message) {
 
 function focusCurrentSchedule() {
   const todayKey = localDateKey(new Date());
-  const dayEntry = Object.entries(activeTrip.days).find(([, plan]) => plan.isoDate === todayKey);
-  if (!dayEntry)
+  const plan = activeTrip.days.find(day => day.isoDate === todayKey);
+  if (!plan)
     return;
 
-  const [key] = dayEntry;
+  const key = plan.isoDate;
   if (activeDayKey !== key)
     selectDay(key);
   else
@@ -245,9 +197,9 @@ function setActiveView(view) {
 }
 
 function selectDay(key) {
-  const keys = Object.keys(activeTrip.days);
-  const plan = activeTrip.days[key];
-  const dayIndex = keys.indexOf(key);
+  const plan = activeTrip.days.find(day => day.isoDate === key) ?? activeTrip.days[0];
+  const dayIndex = activeTrip.days.indexOf(plan);
+  key = plan.isoDate;
   activeDayKey = key;
   document.documentElement.style.setProperty("--accent", plan.color);
   document.querySelectorAll(".day-tabs button").forEach(button => {
@@ -264,11 +216,10 @@ function selectDay(key) {
 }
 
 function renderDayTabs(preferredDayKey) {
-  const keys = Object.keys(activeTrip.days);
   dayTabs.replaceChildren();
-  dayTabs.style.setProperty("--day-count", keys.length);
-  keys.forEach(key => {
-    const plan = activeTrip.days[key];
+  dayTabs.style.setProperty("--day-count", activeTrip.days.length);
+  activeTrip.days.forEach(plan => {
+    const key = plan.isoDate;
     const button = document.createElement("button");
     button.type = "button";
     button.dataset.day = key;
@@ -277,7 +228,10 @@ function renderDayTabs(preferredDayKey) {
     button.addEventListener("click", () => selectDay(key));
     dayTabs.append(button);
   });
-  selectDay(keys.includes(preferredDayKey) ? preferredDayKey : keys[0]);
+  const selected = activeTrip.days.some(plan => plan.isoDate === preferredDayKey)
+    ? preferredDayKey
+    : activeTrip.days[0].isoDate;
+  selectDay(selected);
 }
 
 function selectTrip(id, preferredDayKey) {
@@ -351,7 +305,7 @@ async function initialize() {
     selectTrip(initialTrip.id, savedUiState?.dayKey);
 
     if (savedUiState?.tripId === activeTrip.id && savedUiState?.dayKey === activeDayKey) {
-      const lastPointIndex = activePlan.points.length - 1;
+      const lastPointIndex = activePlan.visits.length - 1;
       const startIdx = Math.min(Math.max(Number(savedUiState.startIdx) || 0, 0), lastPointIndex - 1);
       const endIdx = Math.min(Math.max(Number(savedUiState.endIdx) || lastPointIndex, startIdx + 1), lastPointIndex);
       routeStart.value = startIdx;

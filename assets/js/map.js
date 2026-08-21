@@ -1,4 +1,5 @@
-import { createNaverMapLink, pointRowIndexes } from "./schedule.js";
+import { createNaverMapLink } from "./schedule.js";
+import { visitIndexMap, visitMap, visitRowIndexes } from "./trip-model.js";
 
 const map = L.map("route-map", { zoomControl: true });
 const routeLayers = L.layerGroup().addTo(map);
@@ -13,9 +14,10 @@ L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
 }).addTo(map);
 
 function segmentLocations(plan, segment) {
-  return segment.points.map(index => {
-    const [, lon, lat] = plan.points[index];
-    return [lon, lat];
+  const visits = visitMap(plan);
+  return segment.visits.map(id => {
+    const visit = visits.get(id);
+    return [visit.lng, visit.lat];
   });
 }
 
@@ -24,7 +26,8 @@ function distanceBetween([lat1, lon1], [lat2, lon2]) {
   const earthRadius = 6371000;
   const latDelta = toRadians(lat2 - lat1);
   const lonDelta = toRadians(lon2 - lon1);
-  const a = Math.sin(latDelta / 2) ** 2 + Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) * Math.sin(lonDelta / 2) ** 2;
+  const a = Math.sin(latDelta / 2) ** 2
+    + Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) * Math.sin(lonDelta / 2) ** 2;
   return 2 * earthRadius * Math.asin(Math.sqrt(a));
 }
 
@@ -34,12 +37,14 @@ function polylineDistance(locations) {
 
 function loadRoadRoute(plan, segment) {
   const locations = segmentLocations(plan, segment);
-  const routeLocations = locations.map(([lon, lat]) => [lat, lon]);
+  const routeLocations = locations.map(([lng, lat]) => [lat, lng]);
   if (segment.mode === "cable")
     return Promise.resolve({ locations: routeLocations, distanceMeters: polylineDistance(routeLocations) });
 
-  const server = segment.mode === "foot" ? "https://routing.openstreetmap.de/routed-foot" : "https://router.project-osrm.org";
-  const coordinates = locations.map(([lon, lat]) => `${lon},${lat}`).join(";");
+  const server = segment.mode === "foot"
+    ? "https://routing.openstreetmap.de/routed-foot"
+    : "https://router.project-osrm.org";
+  const coordinates = locations.map(([lng, lat]) => `${lng},${lat}`).join(";");
   const cacheKey = `${server}|${coordinates}`;
   if (roadRouteCache.has(cacheKey))
     return roadRouteCache.get(cacheKey);
@@ -54,7 +59,7 @@ function loadRoadRoute(plan, segment) {
       if (data.code !== "Ok" || !data.routes?.[0]?.geometry?.coordinates)
         throw new Error(data.message || "경로를 찾지 못했습니다.");
       return {
-        locations: data.routes[0].geometry.coordinates.map(([lon, lat]) => [lat, lon]),
+        locations: data.routes[0].geometry.coordinates.map(([lng, lat]) => [lat, lng]),
         distanceMeters: data.routes[0].distance
       };
     })
@@ -70,15 +75,18 @@ export function calculateDayDistance(plan) {
   if (dayDistanceCache.has(plan))
     return dayDistanceCache.get(plan);
 
-  const routes = plan.distanceRoutes?.map(indexes => indexes.map(index => plan.segments[index])) ?? [plan.segments];
-  const request = Promise.all(routes.map(segments => Promise.allSettled(segments.map(segment => loadRoadRoute(plan, segment)))
-    .then(results => results.reduce((total, result, index) => {
-      if (result.status === "fulfilled")
-        return total + result.value.distanceMeters;
-      const fallbackLocations = segmentLocations(plan, segments[index]).map(([lon, lat]) => [lat, lon]);
-      return total + polylineDistance(fallbackLocations);
-    }, 0))))
-    .then(distances => ({ min: Math.min(...distances), max: Math.max(...distances) }));
+  const segmentsById = new Map(plan.segments.map(segment => [segment.id, segment]));
+  const routes = plan.distanceRoutes?.map(route => route.map(id => segmentsById.get(id))) ?? [plan.segments];
+  const request = Promise.all(routes.map(segments =>
+    Promise.allSettled(segments.map(segment => loadRoadRoute(plan, segment)))
+      .then(results => results.reduce((total, result, index) => {
+        if (result.status === "fulfilled")
+          return total + result.value.distanceMeters;
+        const fallback = segmentLocations(plan, segments[index]).map(([lng, lat]) => [lat, lng]);
+        return total + polylineDistance(fallback);
+      }, 0))
+  )).then(distances => ({ min: Math.min(...distances), max: Math.max(...distances) }));
+
   dayDistanceCache.set(plan, request);
   return request;
 }
@@ -89,27 +97,30 @@ export function formatDistance(distanceRange, fractionDigits = 1) {
 }
 
 function filteredSegments(plan, startIdx, endIdx) {
-  const isFullRoute = startIdx === 0 && endIdx === plan.points.length - 1;
-  if (isFullRoute)
+  if (startIdx === 0 && endIdx === plan.visits.length - 1)
     return plan.segments;
 
+  const indexes = visitIndexMap(plan);
   const segments = [];
   plan.segments.forEach(segment => {
     let run = [];
-    for (let idx = 0; idx < segment.points.length - 1; idx++) {
-      const start = segment.points[idx];
-      const end = segment.points[idx + 1];
+    for (let index = 0; index < segment.visits.length - 1; index++) {
+      const startId = segment.visits[index];
+      const endId = segment.visits[index + 1];
+      const start = indexes.get(startId);
+      const end = indexes.get(endId);
       const isSelected = start >= startIdx && end <= endIdx && start < end;
       if (isSelected) {
-        if (run.length === 0) run.push(start);
-        run.push(end);
+        if (run.length === 0)
+          run.push(startId);
+        run.push(endId);
       } else if (run.length > 0) {
-        segments.push({ mode: segment.mode, points: run });
+        segments.push({ ...segment, visits: run });
         run = [];
       }
     }
     if (run.length > 0)
-      segments.push({ mode: segment.mode, points: run });
+      segments.push({ ...segment, visits: run });
   });
   return segments;
 }
@@ -124,29 +135,39 @@ export async function drawMap(plan, startIdx, endIdx) {
   status.hidden = true;
   status.textContent = "";
 
-  const visiblePoints = new Map();
-  plan.points.forEach(([name, lon, lat], index) => {
+  const visibleLocations = new Map();
+  plan.visits.forEach((visit, index) => {
     if (index < startIdx || index > endIdx)
       return;
 
-    const locationKey = `${lon},${lat}`;
-    if (!visiblePoints.has(locationKey))
-      visiblePoints.set(locationKey, { lon, lat, names: [], indexes: [] });
-    const point = visiblePoints.get(locationKey);
-    point.names.push(name);
-    point.indexes.push(index);
-    bounds.extend([lat, lon]);
+    const locationKey = `${visit.lng},${visit.lat}`;
+    if (!visibleLocations.has(locationKey))
+      visibleLocations.set(locationKey, { lng: visit.lng, lat: visit.lat, names: [], indexes: [] });
+    const location = visibleLocations.get(locationKey);
+    location.names.push(visit.name);
+    location.indexes.push(index);
+    bounds.extend([visit.lat, visit.lng]);
   });
 
-  visiblePoints.forEach(({ lon, lat, names, indexes }) => {
+  visibleLocations.forEach(({ lng, lat, names, indexes }) => {
     const isCombined = indexes.length > 1;
     const isEndpoint = indexes.includes(startIdx) || indexes.includes(endIdx);
     const width = isCombined ? 42 : 30;
     const numbers = indexes.map(index => index + 1).join("·");
     const labels = [...new Set(names)].join(" / ");
     const directionIndex = indexes[0];
-    const icon = L.divIcon({ className: "", html: `<span class="route-pin${isCombined ? " is-combined" : ""}" style="--pin-color:${plan.color}">${numbers}</span>`, iconSize: [width, 30], iconAnchor: [width / 2, 15] });
-    const marker = L.marker([lat, lon], { icon }).bindTooltip(labels, { permanent: isEndpoint, direction: directionIndex % 2 ? "bottom" : "top", className: "place-label", offset: [0, directionIndex % 2 ? 12 : -12] });
+    const icon = L.divIcon({
+      className: "",
+      html: `<span class="route-pin${isCombined ? " is-combined" : ""}" style="--pin-color:${plan.color}">${numbers}</span>`,
+      iconSize: [width, 30],
+      iconAnchor: [width / 2, 15]
+    });
+    const marker = L.marker([lat, lng], { icon }).bindTooltip(labels, {
+      permanent: isEndpoint,
+      direction: directionIndex % 2 ? "bottom" : "top",
+      className: "place-label",
+      offset: [0, directionIndex % 2 ? 12 : -12]
+    });
     marker.on("click", () => {
       marker.openTooltip();
       showMapPlaceCard(plan, indexes);
@@ -167,14 +188,15 @@ export async function drawMap(plan, startIdx, endIdx) {
   if (requestId !== routeRequestId)
     return;
 
-  let failureCnt = 0;
+  let failureCount = 0;
   results.forEach((result, index) => {
     const segment = segments[index];
     let locations;
-    if (result.status === "fulfilled") locations = result.value.locations;
+    if (result.status === "fulfilled")
+      locations = result.value.locations;
     else {
-      failureCnt++;
-      locations = segmentLocations(plan, segment).map(([lon, lat]) => [lat, lon]);
+      failureCount++;
+      locations = segmentLocations(plan, segment).map(([lng, lat]) => [lat, lng]);
     }
 
     L.polyline(locations, {
@@ -187,15 +209,15 @@ export async function drawMap(plan, startIdx, endIdx) {
     }).addTo(routeLayers);
   });
 
-  if (failureCnt > 0) {
-    status.textContent = `일부 경로 ${failureCnt}개를 불러오지 못해 해당 구간만 직선으로 표시했습니다.`;
+  if (failureCount > 0) {
+    status.textContent = `일부 경로 ${failureCount}개를 불러오지 못해 해당 구간만 직선으로 표시했습니다.`;
     status.hidden = false;
   }
 }
 
 function showMapPlaceCard(plan, indexes) {
-  const names = [...new Set(indexes.map(index => plan.points[index][0]))];
-  const rowIndexes = pointRowIndexes(plan);
+  const names = [...new Set(indexes.map(index => plan.visits[index].name))];
+  const rowIndexes = visitRowIndexes(plan);
   const heading = document.getElementById("map-place-name");
   const details = document.getElementById("map-place-details");
   const link = createNaverMapLink(plan, names[0]);
@@ -206,13 +228,14 @@ function showMapPlaceCard(plan, indexes) {
   heading.replaceWith(link);
   document.getElementById("map-place-number").textContent = indexes.map(index => index + 1).join("·");
   details.replaceChildren();
+
   indexes.forEach(index => {
     const row = plan.rows[rowIndexes[index]];
     if (!row)
       return;
     const detail = document.createElement("span");
     detail.className = "map-place-detail";
-    detail.textContent = `${index + 1}. ${[row[0], row[3], row[4]].filter(Boolean).join(" · ")}`;
+    detail.textContent = `${index + 1}. ${[row.time, row.activity, row.note].filter(Boolean).join(" · ")}`;
     details.append(detail);
   });
   mapPlaceCard.hidden = false;

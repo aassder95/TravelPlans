@@ -6,23 +6,44 @@
 
 - `index.html`: 모든 여행이 공통으로 사용하는 화면 뼈대
 - `assets/app.css`: 아이폰 12 기준 모바일 스타일과 공용 테마
-- `assets/js/app.js`: 여행 데이터 로딩, 탭, 선택 상태와 화면 연결
+- `assets/js/app.js`: 앱 초기화, 탭, 선택 상태와 화면 연결
+- `assets/js/data-loader.js`: 매니페스트와 여행 JSON 로딩
+- `assets/js/trip-model.js`: 여행 데이터 검증과 방문 장소 조회
+- `assets/js/ui-state.js`: 마지막 선택 상태의 브라우저 저장
 - `assets/js/schedule.js`: 일정 카드와 현재 일정 렌더링
 - `assets/js/map.js`: Leaflet 지도, 마커, 경로와 이동거리 계산
 - `data/trips.json`: 페이지에 표시할 여행 목록 매니페스트
 - `data/trips/*.json`: 여행별 날짜·일정·장소·동선 데이터
+- `scripts/validate-data.mjs`: 여행 데이터와 id 참조 자동 검사
+- `docs/data-format.md`: 새 여행 작성용 데이터 형식과 예제
+- `package.json`: 별도 패키지 설치 없이 실행하는 검증 명령
 - `robots.txt`: 검색엔진이 사이트를 수집하지 않도록 요청하는 설정
 - `.nojekyll`: GitHub Pages가 파일을 그대로 배포하도록 하는 설정
 
 ## 일정 수정
 
-`data/trips/`에서 해당 여행 JSON을 열고 날짜의 `rows`를 수정합니다. 한 줄은 아래 순서입니다.
+`data/trips/`에서 해당 여행 JSON을 열고 날짜의 `rows`를 수정합니다. 일정 한 줄은 속성 이름이 드러나는 객체로 작성합니다.
 
-```text
-[시간, 출발지, 도착지, 일정, 비고]
+```json
+{
+  "time": "14:00~14:10",
+  "type": "move",
+  "from": "여수엑스포역",
+  "to": "이순신광장",
+  "activity": "이동",
+  "note": "택시"
+}
 ```
 
-새 여행은 `data/trips/`에 JSON 파일을 만들고 `data/trips.json`에 `id`와 파일 경로를 등록합니다. 여행 파일의 `version`은 현재 `1`이며 매니페스트의 `id`와 파일 내부 `id`가 같아야 합니다. 장소나 이동 경로를 바꾸면 같은 날짜의 `points`와 `segments`도 함께 수정합니다. `segments`의 이동 수단은 차량 `drive`, 도보 `foot`, 케이블카 `cable` 중 하나를 사용합니다.
+새 여행은 `data/trips/`에 JSON 파일을 만들고 `data/trips.json`에 `id`와 파일 경로를 등록합니다. 여행 파일의 `version`은 현재 `2`이며 매니페스트의 `id`와 파일 내부 `id`가 같아야 합니다. `region`에는 네이버지도 검색에 사용할 지역명을 쓰고 `days`는 여행 날짜 순서대로 배열에 넣습니다. 장소나 이동 경로를 바꾸면 같은 날짜의 `visits`와 `segments`도 함께 수정합니다. `segments`의 이동 수단은 차량 `drive`, 도보 `foot`, 케이블카 `cable` 중 하나를 사용합니다.
+
+방문 장소와 이동 구간은 배열 번호가 아닌 고유 `id`로 연결합니다. 지도 장소를 일정 카드와 연결할 때는 해당 일정에 `visitIds`를 적습니다. 같은 장소를 다시 방문하면 좌표는 같아도 다른 방문 `id`를 사용합니다. 자세한 형식은 `docs/data-format.md`를 참고합니다.
+
+수정 후 아래 명령으로 필수 속성, 중복 id, 잘못된 방문·구간 참조를 확인합니다.
+
+```powershell
+npm test
+```
 
 공통 화면이나 동작을 바꾸는 경우에만 `index.html` 또는 `assets/`를 수정합니다. 일정 추가를 위해 기존 여행 데이터나 공통 JavaScript를 복사하지 않습니다.
 

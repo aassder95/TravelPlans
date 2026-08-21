@@ -62,8 +62,13 @@
 
 - 모든 여행은 하나의 `index.html`에서 보여 주며 여행별 HTML 페이지를 만들지 않는다.
 - 새 여행은 `data/trips/` 아래의 독립 JSON 파일로 추가하고 `data/trips.json` 매니페스트에 등록한다.
-- 여행 JSON은 `version`, `id`, `tab`, `dateRange`, `color`, `days` 구조를 유지하고 매니페스트의 `id`와 파일 내부의 `id`를 일치시킨다.
-- 공통 화면은 `index.html`, 스타일은 `assets/app.css`, 앱 상태와 화면 연결은 `assets/js/app.js`, 일정 카드는 `assets/js/schedule.js`, 지도와 경로는 `assets/js/map.js`가 담당한다.
+- 여행 JSON은 스키마 버전 `2`의 `version`, `id`, `tab`, `region`, `dateRange`, `color`, `days` 구조를 유지하고 매니페스트의 `id`와 파일 내부의 `id`를 일치시킨다.
+- `region`은 네이버지도 검색에 사용하는 지역명이며, `days`는 실제 여행 날짜 순서의 배열로 작성하고 `isoDate`를 중복하지 않는다.
+- 날짜별 방문 장소는 `visits`의 객체로 작성하고 하루 안에서 고유한 `id`를 부여한다. 같은 장소를 재방문해도 서로 다른 방문 `id`를 사용한다.
+- 이동 경로의 `segments[].visits`와 거리 대안의 `distanceRoutes`는 배열 위치가 아니라 방문·구간 `id`를 참조한다.
+- 일정의 `rows`는 위치 기반 배열이 아닌 `time`, `type`, `from`, `to`, `activity`, `note` 등의 이름 있는 속성을 사용한다.
+- 지도 방문 장소와 일정 카드는 장소명 추측으로 연결하지 않고 일정의 `visitIds`로 명시적으로 연결한다. 모든 방문 `id`는 최소 한 일정에 연결한다.
+- 공통 화면은 `index.html`, 스타일은 `assets/app.css`, 앱 조립은 `assets/js/app.js`, 데이터 로딩은 `assets/js/data-loader.js`, 데이터 검증과 조회는 `assets/js/trip-model.js`, 저장 상태는 `assets/js/ui-state.js`, 일정 카드는 `assets/js/schedule.js`, 지도와 경로는 `assets/js/map.js`가 담당한다.
 - 여행별 기능을 복사하지 않고 공통 모듈을 재사용하며, 여행 추가만으로 공통 JavaScript를 수정하지 않는다.
 - 여행 탭 아래에 해당 여행의 날짜별 탭을 표시한다.
 - 전체 제목은 `똥뚜 여행계획`을 유지하고, 여행 탭과 중복되는 시작일·종료일은 상단에 다시 표시하지 않는다.
@@ -73,6 +78,7 @@
 - 식당 등 택일 동선이 있으면 모든 후보 경로를 중복 합산하지 않고 각 경로를 별도로 계산한 뒤 대표 중간값 하나를 `약`과 함께 표시한다. 상단 총거리는 정수 km로 반올림한다.
 - WindowTools `DefaultThemeCatalog`의 기본 다크 팔레트와 `Segoe UI`를 사용한다.
 - 별도 빌드 과정 없이 GitHub Pages가 정적 HTML·CSS·JavaScript·JSON을 그대로 배포하는 구조를 유지한다.
+- 여행 데이터 변경 후 `npm test`를 실행해 id 중복, 잘못된 참조, 필수 속성 누락을 확인한다.
 - 화면은 아이폰 12의 CSS 해상도인 390×844를 기준으로 작성하고 일정표를 가로 스크롤 방식으로 만들지 않는다.
 - 지도는 Leaflet과 OpenStreetMap 실제 지도를 사용한다.
 - 차량과 도보는 실제 도로 경로를 표시하고 케이블카 등 특수 이동만 별도 파선으로 표시한다.
