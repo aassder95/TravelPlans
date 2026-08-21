@@ -65,9 +65,11 @@ h1 { margin:0; font-family:"Segoe UI Semibold","Segoe UI",sans-serif; font-size:
 .route-range label { min-width:0; display:flex; align-items:flex-start; flex-direction:column; gap:5px; }
 .route-range select { width:100%; min-height:38px; border:1px solid var(--border); border-radius:5px; background:var(--input-bg); color:var(--text-primary); }
 .route-range select { padding:6px 24px 6px 8px; font-size:12px; }
-.route-actions { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:7px; }
+.route-actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; margin-top:7px; }
+.route-actions.is-single { grid-template-columns:1fr; }
+.route-actions[hidden],.route-actions button[hidden] { display:none; }
 .route-actions button { min-height:38px; border:1px solid var(--border); border-radius:5px; background:var(--input-bg); color:var(--text-primary); font-size:12px; font-weight:600; cursor:pointer; }
-.route-actions button:first-child { border-color:var(--accent); background:var(--selection); }
+.route-actions #route-now { border-color:var(--accent); background:var(--selection); }
 .route-range select:focus-visible,.route-actions button:focus-visible { outline:2px solid var(--focus); outline-offset:2px; }
 .day-feedback { margin:7px 1px 0; color:var(--focus); font-size:11px; line-height:1.4; }
 .day-feedback:empty { display:none; }
@@ -92,8 +94,10 @@ tbody tr.movement-row { padding:3px 8px; border:0; background:transparent; }
 .schedule-item { display:block; padding:0; border:0; background:transparent; overflow-wrap:anywhere; }
 .schedule-time { display:block; margin-bottom:5px; color:var(--focus); font-size:11px; font-weight:700; }
 .schedule-place { display:block; color:var(--text-primary); font-size:15px; font-weight:700; line-height:1.4; }
-.schedule-place-row,.candidate-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
-.naver-map-link { flex:0 0 auto; display:inline-flex; align-items:center; min-height:28px; padding:4px 7px; border:1px solid #03c75a; border-radius:5px; background:#10251a; color:#63df93; font-size:10.5px; font-weight:700; line-height:1; text-decoration:none; white-space:nowrap; }
+.schedule-place-row,.candidate-heading { display:block; }
+.naver-place-link { color:inherit; text-decoration-color:#48a47c99; text-decoration-line:underline; text-decoration-thickness:1px; text-underline-offset:3px; }
+.naver-place-link::after { content:" ↗"; color:var(--focus); font-size:.75em; }
+.naver-place-link:focus-visible { border-radius:3px; outline:2px solid var(--focus); outline-offset:3px; }
 .schedule-detail { display:block; margin-top:6px; padding-top:6px; border-top:1px solid var(--border); color:var(--text-muted); font-size:11px; line-height:1.4; }
 .travel-group { margin-top:8px; border-top:1px solid var(--border); }
 .traveler-row { display:grid; grid-template-columns:auto minmax(0,1fr); align-items:start; gap:8px; padding:10px 0; }
@@ -156,8 +160,8 @@ tbody tr.movement-row.is-current { border:1px solid var(--focus); background:var
           <label>도착 <select id="route-end"></select></label>
         </div>
         <div class="route-actions">
-          <button type="button" id="route-now">지금 일정</button>
-          <button type="button" id="route-all">전체 보기</button>
+          <button type="button" id="route-now" hidden>지금 일정</button>
+          <button type="button" id="route-all" hidden>전체 동선 복원</button>
         </div>
         <p class="day-feedback" id="day-feedback" aria-live="polite"></p>
       </div>
@@ -271,6 +275,9 @@ const map = L.map("route-map", { zoomControl: true });
 const routeLayers = L.layerGroup().addTo(map);
 const routeStart = document.getElementById("route-start");
 const routeEnd = document.getElementById("route-end");
+const routeActions = document.querySelector(".route-actions");
+const routeNow = document.getElementById("route-now");
+const routeAll = document.getElementById("route-all");
 let routeRequestId = 0;
 let activePlan;
 let activeDayKey;
@@ -574,6 +581,12 @@ function findCurrentScheduleRow(plan, now = new Date()) {
 
 function naverMapUrl(plan, place, exactName = false) {
   const appname = `${location.origin}${location.pathname}`;
+  const query = `여수 ${place}`;
+  const useApp = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+    || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  if (!useApp)
+    return `https://map.naver.com/p/search/${encodeURIComponent(query)}`;
+
   if (!exactName) {
     const compact = value => value.replace(/\([^)]*\)/g, "").replace(/\s/g, "");
     const point = plan.points.find(([pointName]) => compact(pointName) === compact(place))
@@ -583,15 +596,21 @@ function naverMapUrl(plan, place, exactName = false) {
       return `nmap://place?${new URLSearchParams({ lat, lng, name, appname })}`;
     }
   }
-  return `nmap://search?${new URLSearchParams({ query: `여수 ${place}`, appname })}`;
+  return `nmap://search?${new URLSearchParams({ query, appname })}`;
 }
 
 function createNaverMapLink(plan, place, exactName = false) {
   const link = document.createElement("a");
-  link.className = "naver-map-link";
+  const useApp = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+    || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  link.className = "naver-place-link";
   link.href = naverMapUrl(plan, place, exactName);
-  link.textContent = "네이버지도";
-  link.setAttribute("aria-label", `${place} 네이버지도 앱에서 열기`);
+  link.textContent = place;
+  if (!useApp) {
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+  }
+  link.setAttribute("aria-label", `${place} 네이버지도에서 열기`);
   return link;
 }
 
@@ -612,7 +631,7 @@ function renderSchedule(plan, startIdx, endIdx) {
     const tr = document.createElement("tr");
     const td = document.createElement("td");
     const timeText = document.createElement("span");
-    const placeText = document.createElement("strong");
+    let placeText = document.createElement("strong");
     const isMovement = activity.startsWith("이동");
     td.className = "schedule-item";
     td.colSpan = 5;
@@ -648,13 +667,15 @@ function renderSchedule(plan, startIdx, endIdx) {
     }
     timeText.className = "schedule-time";
     timeText.textContent = time;
-    placeText.className = "schedule-place";
-    placeText.textContent = travel ? activity : origin && dest ? `${origin} → ${dest}` : dest || origin;
+    const placeLabel = travel ? activity : origin && dest ? `${origin} → ${dest}` : dest || origin;
+    const mapPlace = dest || origin;
+    if (!travel && !candidates?.length && shouldShowNaverMap(activity))
+      placeText = createNaverMapLink(plan, mapPlace);
+    placeText.classList.add("schedule-place");
+    placeText.textContent = placeLabel;
     const placeRow = document.createElement("div");
     placeRow.className = "schedule-place-row";
     placeRow.append(placeText);
-    if (!travel && !candidates?.length && shouldShowNaverMap(activity))
-      placeRow.append(createNaverMapLink(plan, dest || origin));
     td.append(timeText, placeRow);
     if (travel) {
       const group = document.createElement("div");
@@ -707,15 +728,14 @@ function renderSchedule(plan, startIdx, endIdx) {
       candidates.forEach(([name, menu]) => {
         const item = document.createElement("div");
         const heading = document.createElement("div");
-        const nameText = document.createElement("strong");
+        const nameText = createNaverMapLink(plan, name, true);
         const menuText = document.createElement("span");
         item.className = "candidate-item";
         heading.className = "candidate-heading";
-        nameText.className = "candidate-name";
-        nameText.textContent = name;
+        nameText.classList.add("candidate-name");
         menuText.className = "candidate-menu";
         menuText.textContent = menu;
-        heading.append(nameText, createNaverMapLink(plan, name, true));
+        heading.append(nameText);
         item.append(heading, menuText);
         list.append(item);
       });
@@ -738,6 +758,19 @@ function drawSelectedRoute() {
   document.getElementById("route-summary").textContent = selectedRouteSummary(activePlan, startIdx, endIdx);
   renderSchedule(activePlan, startIdx, endIdx);
   drawMap(activePlan, startIdx, endIdx);
+  updateRouteActions();
+}
+
+function updateRouteActions(now = new Date()) {
+  const todayKey = localDateKey(now);
+  const isTripDay = Object.values(activeTrip.days).some(plan => plan.isoDate === todayKey);
+  const isFullRoute = Number(routeStart.value) === 0
+    && Number(routeEnd.value) === activePlan.points.length - 1;
+  routeNow.hidden = !isTripDay;
+  routeAll.hidden = isFullRoute;
+  const visibleActionCount = [routeNow, routeAll].filter(button => !button.hidden).length;
+  routeActions.hidden = visibleActionCount === 0;
+  routeActions.classList.toggle("is-single", visibleActionCount === 1);
 }
 
 function fillEndOptions(startIdx, selectedEndIdx) {
@@ -780,10 +813,8 @@ function showFeedback(message) {
 function focusCurrentSchedule() {
   const todayKey = localDateKey(new Date());
   const dayEntry = Object.entries(activeTrip.days).find(([, plan]) => plan.isoDate === todayKey);
-  if (!dayEntry) {
-    showFeedback("여행 당일에 현재 일정을 표시해요.");
+  if (!dayEntry)
     return;
-  }
 
   const [key] = dayEntry;
   if (activeDayKey !== key)
@@ -879,8 +910,8 @@ routeStart.addEventListener("change", () => {
   drawSelectedRoute();
 });
 routeEnd.addEventListener("change", drawSelectedRoute);
-document.getElementById("route-all").addEventListener("click", showAllSchedule);
-document.getElementById("route-now").addEventListener("click", focusCurrentSchedule);
+routeAll.addEventListener("click", showAllSchedule);
+routeNow.addEventListener("click", focusCurrentSchedule);
 document.getElementById("view-schedule").addEventListener("click", () => setActiveView("schedule"));
 document.getElementById("view-map").addEventListener("click", () => setActiveView("map"));
 document.getElementById("back-to-top").addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
