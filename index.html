@@ -49,7 +49,7 @@ h1 { margin:0; font-family:"Segoe UI Semibold","Segoe UI",sans-serif; font-size:
 .day-tabs button.active::after { transform:scaleX(1); }
 .day-tabs small,.day-tabs span { display:block; overflow:hidden; font-size:10px; white-space:nowrap; text-overflow:ellipsis; }
 .day-tabs strong { display:block; margin:2px 0; font-size:15px; }
-.view-switch { display:grid; grid-template-columns:1fr 1fr; gap:4px; margin-top:8px; padding:3px; border:1px solid var(--border); border-radius:7px; background:var(--input-bg); }
+.view-switch { display:grid; grid-template-columns:repeat(3,1fr); gap:4px; margin-top:8px; padding:3px; border:1px solid var(--border); border-radius:7px; background:var(--input-bg); }
 .view-switch button { min-height:36px; border:0; border-radius:5px; background:transparent; color:var(--text-muted); font-size:12px; font-weight:700; cursor:pointer; }
 .view-switch button.active { background:var(--selection); color:var(--text-primary); box-shadow:inset 0 0 0 1px var(--accent); }
 .view-panel[hidden] { display:none; }
@@ -127,6 +127,21 @@ tbody tr.movement-row.is-current { border:1px solid var(--focus); background:var
 .current-marker { display:inline-block; margin-bottom:5px; padding:3px 7px; border-radius:999px; background:var(--focus); color:#08130e; font-size:9px; font-weight:800; }
 .back-to-top { position:fixed; right:max(14px,calc((100vw - 390px)/2 + 14px)); bottom:calc(14px + env(safe-area-inset-bottom)); z-index:1000; width:42px; height:42px; border:1px solid var(--accent); border-radius:50%; background:#191d20ed; color:var(--text-primary); font-size:18px; font-weight:700; box-shadow:0 4px 14px #0009; opacity:0; pointer-events:none; transform:translateY(8px); transition:opacity .18s,transform .18s; }
 .back-to-top.show { opacity:1; pointer-events:auto; transform:translateY(0); }
+.day-tabs[hidden],.day-overview[hidden] { display:none; }
+.booking-head { display:flex; align-items:flex-end; justify-content:space-between; gap:12px; margin-bottom:10px; }
+.booking-head h2 { margin:0; font-size:18px; }
+.booking-progress { color:var(--focus); font-size:12px; font-weight:700; white-space:nowrap; }
+.booking-list { display:grid; gap:7px; }
+.booking-item { padding:11px 12px; border:1px solid var(--border); border-radius:6px; background:var(--input-bg); }
+.booking-item-head { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+.booking-kind { display:block; margin-bottom:3px; color:var(--text-muted); font-size:10px; font-weight:700; }
+.booking-name { margin:0; color:var(--text-primary); font-size:15px; line-height:1.4; }
+.booking-status { flex:0 0 auto; padding:4px 7px; border:1px solid var(--border); border-radius:999px; font-size:10px; font-weight:800; white-space:nowrap; }
+.booking-status.done { border-color:var(--accent); background:var(--selection); color:var(--text-primary); }
+.booking-status.planned { border-color:#7b693a; background:#302a19; color:#e8c873; }
+.booking-status.onsite { border-color:#53626a; background:#20292d; color:#b8cbd4; }
+.booking-details { display:grid; gap:4px; margin-top:8px; padding-top:8px; border-top:1px solid var(--border); }
+.booking-detail { color:var(--text-muted); font-size:11.5px; line-height:1.45; }
 @media (min-width:391px) {
   .hero,.page { box-shadow:0 0 30px #0007; }
 }
@@ -169,6 +184,7 @@ tbody tr.movement-row.is-current { border:1px solid var(--focus); background:var
     <div class="view-switch" role="tablist" aria-label="여행 정보 보기">
       <button type="button" id="view-schedule" role="tab" aria-controls="schedule-panel">일정</button>
       <button type="button" id="view-map" role="tab" aria-controls="map-panel">지도</button>
+      <button type="button" id="view-booking" role="tab" aria-controls="booking-panel">예매</button>
     </div>
 
     <section class="card route-card view-panel" id="map-panel" role="tabpanel" aria-labelledby="view-map">
@@ -190,6 +206,14 @@ tbody tr.movement-row.is-current { border:1px solid var(--focus); background:var
       </div>
     </section>
 
+    <section class="card booking-card view-panel" id="booking-panel" role="tabpanel" aria-labelledby="view-booking">
+      <div class="booking-head">
+        <h2>예매·예약</h2>
+        <span class="booking-progress" id="booking-progress"></span>
+      </div>
+      <div class="booking-list" id="booking-list"></div>
+    </section>
+
   </main>
   <button type="button" class="back-to-top" id="back-to-top" aria-label="맨 위로">↑</button>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
@@ -199,6 +223,13 @@ const trips = [{
   tab: "26.09.05~26.09.07/여수",
   dateRange: "2026.09.05 ~ 2026.09.07",
   color: "#206c4c",
+  bookings: [
+    {kind:"교통",name:"왕복 기차",status:"done",statusLabel:"완료",details:["9월 5일 · 수원 08:48 → 여수엑스포 13:05","9월 5일 · 동탄 10:37 → 여수엑스포 13:27","9월 7일 · 여수엑스포 14:32 → 광명 17:23","9월 7일 · 여수엑스포 14:32 → 동탄 17:17"]},
+    {kind:"숙박",name:"돌산 숙소",status:"done",statusLabel:"완료",details:["9월 5일 15:00 체크인","9월 7일 11:00 체크아웃"]},
+    {kind:"관람",name:"아쿠아플라넷 여수",status:"planned",statusLabel:"예매 예정",details:["9월 6일 13:40 방문"]},
+    {kind:"관람",name:"아르떼뮤지엄 여수",status:"planned",statusLabel:"예매 예정",details:["9월 6일 16:00 방문"]},
+    {kind:"이동",name:"여수해상케이블카 편도",status:"onsite",statusLabel:"당일 결정",details:["9월 6일 17:50 발권·대기","18:30 자산 → 돌산 탑승"]}
+  ],
   days: {
   sat: {
     isoDate: "2026-09-05", date: "9월 5일", day: "토요일", theme: "도심·밤바다", color: "#206c4c",
@@ -831,16 +862,59 @@ function focusCurrentSchedule() {
   }));
 }
 
+function renderBookings() {
+  const bookings = activeTrip.bookings ?? [];
+  const completedCount = bookings.filter(booking => booking.status === "done").length;
+  document.getElementById("booking-progress").textContent = `${bookings.length}개 중 ${completedCount}개 완료`;
+  const list = document.getElementById("booking-list");
+  list.replaceChildren();
+  bookings.forEach(booking => {
+    const item = document.createElement("article");
+    const head = document.createElement("div");
+    const titleGroup = document.createElement("div");
+    const kind = document.createElement("span");
+    const name = document.createElement("h3");
+    const status = document.createElement("span");
+    const details = document.createElement("div");
+    item.className = "booking-item";
+    head.className = "booking-item-head";
+    kind.className = "booking-kind";
+    kind.textContent = booking.kind;
+    name.className = "booking-name";
+    name.textContent = booking.name;
+    status.className = `booking-status ${booking.status}`;
+    status.textContent = booking.statusLabel;
+    details.className = "booking-details";
+    booking.details.forEach(detail => {
+      const line = document.createElement("span");
+      line.className = "booking-detail";
+      line.textContent = detail;
+      details.append(line);
+    });
+    titleGroup.append(kind, name);
+    head.append(titleGroup, status);
+    item.append(head, details);
+    list.append(item);
+  });
+}
+
 function setActiveView(view) {
   activeView = view;
   const isSchedule = view === "schedule";
+  const isMap = view === "map";
+  const isBooking = view === "booking";
   document.getElementById("schedule-panel").hidden = !isSchedule;
-  document.getElementById("map-panel").hidden = isSchedule;
+  document.getElementById("map-panel").hidden = !isMap;
+  document.getElementById("booking-panel").hidden = !isBooking;
+  dayTabs.hidden = isBooking;
+  document.querySelector(".day-overview").hidden = isBooking;
   document.getElementById("view-schedule").classList.toggle("active", isSchedule);
-  document.getElementById("view-map").classList.toggle("active", !isSchedule);
+  document.getElementById("view-map").classList.toggle("active", isMap);
+  document.getElementById("view-booking").classList.toggle("active", isBooking);
   document.getElementById("view-schedule").setAttribute("aria-selected", isSchedule);
-  document.getElementById("view-map").setAttribute("aria-selected", !isSchedule);
-  if (!isSchedule) {
+  document.getElementById("view-map").setAttribute("aria-selected", isMap);
+  document.getElementById("view-booking").setAttribute("aria-selected", isBooking);
+  if (isMap) {
     setTimeout(() => {
       map.invalidateSize();
       drawSelectedRoute();
@@ -892,6 +966,7 @@ function selectTrip(id) {
     button.setAttribute("aria-pressed", active);
   });
   renderDayTabs();
+  renderBookings();
   refreshTripDistance(activeTrip);
 }
 
@@ -914,6 +989,7 @@ routeAll.addEventListener("click", showAllSchedule);
 routeNow.addEventListener("click", focusCurrentSchedule);
 document.getElementById("view-schedule").addEventListener("click", () => setActiveView("schedule"));
 document.getElementById("view-map").addEventListener("click", () => setActiveView("map"));
+document.getElementById("view-booking").addEventListener("click", () => setActiveView("booking"));
 document.getElementById("back-to-top").addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
 window.addEventListener("scroll", () => document.getElementById("back-to-top").classList.toggle("show", window.scrollY > 500), { passive: true });
 
