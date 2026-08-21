@@ -41,6 +41,7 @@ h1 { margin:0; font-family:"Segoe UI Semibold","Segoe UI",sans-serif; font-size:
 .home-map svg { display:block; width:100%; height:100%; overflow:visible; user-select:none; }
 .home-province-shape { fill:#293033; stroke:#687275; stroke-width:1.1; vector-effect:non-scaling-stroke; transition:fill .15s,stroke .15s,filter .15s; }
 .home-city-overlay-source { pointer-events:auto; }
+.home-subregion-outline { fill:none; stroke:transparent; pointer-events:none; vector-effect:non-scaling-stroke; transition:stroke .15s; }
 .home-subregion-shape { fill:transparent; stroke:transparent; pointer-events:all; vector-effect:non-scaling-stroke; transition:fill .15s,stroke .15s; }
 .home-map-region { pointer-events:auto; outline:none; }
 .home-map-region:not(.is-static-footprint) { cursor:pointer; }
@@ -48,14 +49,15 @@ h1 { margin:0; font-family:"Segoe UI Semibold","Segoe UI",sans-serif; font-size:
 .home-map.is-city-detailed .home-province-shape { cursor:pointer; }
 .home-map-region.is-visited .home-subregion-shape,.home-map-region.is-visited.home-province-shape { fill:#2d8b68; stroke:#92d8b8; stroke-width:1.35; }
 .home-map-region.is-planned .home-subregion-shape,.home-map-region.is-planned.home-province-shape { fill:#8b6b2d; stroke:#f0c76e; stroke-width:1.5; stroke-dasharray:3 2; }
-.home-map.is-city-detailed .home-map-region.is-city-region { filter:drop-shadow(0 0 .65px #778184); }
+.home-map.is-city-detailed .home-map-region.is-city-region .home-subregion-outline { stroke:#778184; stroke-width:1.5; }
 .home-map.is-city-detailed .home-map-region.is-city-region:not(.is-visited):not(.is-planned) .home-subregion-shape { fill:#293033; }
-.home-map.is-seoul-detailed .home-map-region.is-seoul-district { filter:drop-shadow(0 0 .65px #778184); }
+.home-map.is-seoul-detailed .home-map-region.is-seoul-district .home-subregion-shape { stroke:#778184; stroke-width:1; }
 .home-map.is-seoul-detailed .home-map-region.is-seoul-district:not(.is-visited):not(.is-planned) .home-subregion-shape { fill:#293033; }
-.home-map-region.is-selected .home-subregion-shape,.home-map-region.is-selected.home-province-shape { fill:#49ad83; stroke:#f2fff9; stroke-width:2; filter:drop-shadow(0 0 3px #72d9ac); }
-.home-map-region.is-city-region.is-visited { filter:drop-shadow(0 0 .8px #92d8b8); }
-.home-map-region.is-city-region.is-planned { filter:drop-shadow(0 0 .8px #f0c76e); }
-.home-map.is-city-detailed .home-map-region.is-city-region.is-selected { filter:drop-shadow(1px 0 #f2fff9) drop-shadow(-1px 0 #f2fff9) drop-shadow(0 1px #f2fff9) drop-shadow(0 -1px #f2fff9) drop-shadow(0 0 3px #72d9ac); }
+.home-map-region.is-selected .home-subregion-shape,.home-map-region.is-selected.home-province-shape { fill:#49ad83; stroke:#f2fff9; stroke-width:2; }
+.home-map.is-city-detailed .home-map-region.is-city-region.is-visited .home-subregion-outline { stroke:#92d8b8; }
+.home-map.is-city-detailed .home-map-region.is-city-region.is-planned .home-subregion-outline { stroke:#f0c76e; stroke-dasharray:3 2; }
+.home-map.is-city-detailed .home-map-region.is-city-region.is-selected .home-subregion-outline { stroke:#f2fff9; stroke-width:3; stroke-dasharray:none; }
+.home-map.is-seoul-detailed .home-map-region.is-seoul-district.is-selected .home-subregion-shape { stroke:#f2fff9; stroke-width:2; }
 .home-map-region.is-city-region.is-visited .home-subregion-shape,.home-map-region.is-city-region.is-planned .home-subregion-shape { stroke:transparent; filter:none; }
 .home-map-region.is-city-region.is-selected .home-subregion-shape { fill:#49ad83; stroke:transparent; filter:none; }
 .home-map-region:focus-visible .home-subregion-shape,.home-map-region.home-province-shape:focus-visible { stroke:#fff; stroke-width:3; }

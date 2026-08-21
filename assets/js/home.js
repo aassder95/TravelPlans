@@ -53,13 +53,7 @@ function provinceCityName(provinceId) {
 }
 
 function appendRegionOverlays(svg, overlayData, cities, visitedCityIds, plannedCityIds, interactiveCityIds, regions, selectRegion) {
-  let definitions = svg.querySelector("defs");
-  if (!definitions) {
-    definitions = document.createElementNS(svgNamespace, "defs");
-    svg.prepend(definitions);
-  }
-
-  overlayData.regions.forEach((region, regionIndex) => {
+  overlayData.regions.forEach(region => {
     const provincePath = svg.querySelector(`[id="${region.provinceId}"]`);
     if (!provincePath)
       return;
@@ -87,18 +81,6 @@ function appendRegionOverlays(svg, overlayData, cities, visitedCityIds, plannedC
 
     const sourceGroup = document.createElementNS(svgNamespace, "g");
     sourceGroup.classList.add("home-city-overlay-source");
-    const clippedGroup = document.createElementNS(svgNamespace, "g");
-    const clipPath = document.createElementNS(svgNamespace, "clipPath");
-    const clipId = `home-province-clip-${regionIndex}`;
-    const clipShape = provincePath.cloneNode(false);
-    clipShape.removeAttribute("id");
-    clipShape.removeAttribute("class");
-    clipPath.id = clipId;
-    clipPath.setAttribute("clipPathUnits", "userSpaceOnUse");
-    clipPath.append(clipShape);
-    definitions.append(clipPath);
-    clippedGroup.setAttribute("clip-path", `url(#${clipId})`);
-    clippedGroup.append(sourceGroup);
     const regionGroups = new Map();
     region.paths.forEach(boundary => {
       const path = createSvgPath(boundary.d);
@@ -111,12 +93,20 @@ function appendRegionOverlays(svg, overlayData, cities, visitedCityIds, plannedC
         regionGroup = document.createElementNS(svgNamespace, "g");
         regionGroup.classList.add("home-map-region", region.provinceId === "서울특별시" ? "is-seoul-district" : "is-city-region");
         regionGroup.dataset.province = region.provinceId;
+        const outlines = document.createElementNS(svgNamespace, "g");
+        outlines.classList.add("home-subregion-outlines");
+        const fills = document.createElementNS(svgNamespace, "g");
+        fills.classList.add("home-subregion-fills");
+        regionGroup.append(outlines, fills);
         regionGroups.set(key, regionGroup);
         sourceGroup.append(regionGroup);
       }
-      regionGroup.append(path);
+      const outline = createSvgPath(boundary.d);
+      outline.classList.add("home-subregion-outline");
+      regionGroup.querySelector(".home-subregion-outlines").append(outline);
+      regionGroup.querySelector(".home-subregion-fills").append(path);
     });
-    svg.append(clippedGroup);
+    svg.append(sourceGroup);
 
     if (overlayData.coordinateSpace !== "national") {
       const [sourceX, sourceY, sourceWidth, sourceHeight] = region.viewBox;
@@ -442,9 +432,14 @@ export async function renderHome({ footprints, trips, onSelectTrip }) {
       cityCardRecords.replaceChildren(empty);
     }
     cityCard.hidden = false;
+    let selectedRegion;
     mapHost.querySelectorAll(".home-map-region").forEach(path => {
-      path.classList.toggle("is-selected", path.dataset.mapRegion === regionKey);
+      const isSelected = path.dataset.mapRegion === regionKey;
+      path.classList.toggle("is-selected", isSelected);
+      if (isSelected)
+        selectedRegion = path;
     });
+    selectedRegion?.parentNode.append(selectedRegion);
   }
 
   function closeCityCard() {
