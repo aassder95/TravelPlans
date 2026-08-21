@@ -81,6 +81,18 @@ tbody tr { display:block; padding:11px 12px; border:1px solid var(--border); bor
 .schedule-time { display:block; margin-bottom:5px; color:var(--focus); font-size:11px; font-weight:700; }
 .schedule-place { display:block; color:var(--text-primary); font-size:15px; font-weight:700; line-height:1.4; }
 .schedule-detail { display:block; margin-top:6px; padding-top:6px; border-top:1px solid var(--border); color:var(--text-muted); font-size:11px; line-height:1.4; }
+.candidate-details { margin-top:6px; border-top:1px solid var(--border); }
+.candidate-details summary { display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:44px; color:var(--text-primary); font-size:13px; font-weight:700; cursor:pointer; list-style:none; }
+.candidate-details summary::-webkit-details-marker { display:none; }
+.candidate-toggle { flex:0 0 auto; color:var(--focus); font-size:12px; font-weight:600; white-space:nowrap; }
+.candidate-close-label { display:none; }
+.candidate-details[open] .candidate-open-label { display:none; }
+.candidate-details[open] .candidate-close-label { display:inline; }
+.candidate-list { border-top:1px solid var(--border); }
+.candidate-item { padding:10px 0; }
+.candidate-item + .candidate-item { border-top:1px solid var(--border); }
+.candidate-name { display:block; color:var(--text-primary); font-size:14px; font-weight:700; line-height:1.4; }
+.candidate-menu { display:block; margin-top:3px; color:var(--text-muted); font-size:12.5px; line-height:1.45; }
 footer { display:flex; justify-content:space-between; gap:10px; padding:18px 3px 0; color:var(--text-muted); font-size:10px; }
 footer strong { color:var(--text-primary); }
 @media (min-width:391px) {
@@ -162,12 +174,12 @@ const trips = [{
       ["08:48~13:05","수원","여수엑스포역","열차 이동",""],["13:05~13:27","","여수엑스포역","여자친구 도착 대기",""],
       ["13:27~14:00","","여수엑스포역","화장·준비",""],["14:00~14:15","여수엑스포역","숙소(짐 맡기기)","이동","택시"],
       ["14:15~14:20","","숙소(짐 맡기기)","짐 맡기기",""],["14:20~14:35","숙소(짐 맡기기)","이순신광장 점심 권역","이동","택시"],
-      ["14:35~15:35","","이순신광장 점심 권역","점심","순이네밥상(돌게장정식·갈치조림) / 진남옥(한우뭇국·수육전골) / 팔계촌(제육볶음·고등어쌈밥) / 순심원(해물철판짜장·탕수육)"],["15:35~15:40","이순신광장 점심 권역","이순신광장 먹거리 골목","이동","도보"],
-      ["15:40~16:20","","이순신광장 먹거리 골목","간식","염전의봄·옥수당(소금빵·옥수샌드) / 3미여수딸기찹쌀떡(딸기찹쌀떡) / 갓버터도나스(갓버터도나스·옥수수도나스) / 아이스크림옥(수제 젤라토) / 가릿랑고스(돌산갓랑고스·애플랑고스) / 로타리분식(떡볶이·갈비튀김) / 구봉만두(삼합만두·꾼만두) / 바다김밥 중앙본점(갓참치김밥·아귀채김밥)"],
+      ["14:35~15:35","","이순신광장 점심 권역","점심","",[["순이네밥상","돌게장정식 · 갈치조림"],["진남옥","한우뭇국 · 수육전골"],["팔계촌","제육볶음 · 고등어쌈밥"],["순심원","해물철판짜장 · 탕수육"]]],["15:35~15:40","이순신광장 점심 권역","이순신광장 먹거리 골목","이동","도보"],
+      ["15:40~16:20","","이순신광장 먹거리 골목","간식","",[["염전의봄·옥수당","소금빵 · 옥수샌드"],["3미여수딸기찹쌀떡","딸기찹쌀떡"],["갓버터도나스","갓버터도나스 · 옥수수도나스"],["아이스크림옥","수제 젤라토"],["가릿랑고스","돌산갓랑고스 · 애플랑고스"],["로타리분식","떡볶이 · 갈비튀김"],["구봉만두","삼합만두 · 꾼만두"],["바다김밥 중앙본점","갓참치김밥 · 아귀채김밥"]]],
       ["16:20~16:25","이순신광장 먹거리 골목","이순신광장","이동","도보"],["16:25~16:55","","이순신광장","구경",""],
       ["16:55~17:55","이순신광장","고소동 벽화마을","구경","도보"],["17:55~18:15","고소동 벽화마을","하멜등대","이동","도보"],
       ["18:15~18:45","","하멜등대","구경","빨간 등대"],["18:45~19:00","하멜등대","하멜로 저녁 권역","이동","도보"],
-      ["19:00~20:30","","하멜로 저녁 권역","저녁","오팔공(조개구이) / 보물섬(해물전복물회·전복죽) / 돌문어상회(돌문어삼합·돌문어라면)"],["20:30~21:15","하멜로 저녁 권역","낭만포차·종포해양공원","여수 밤바다 산책",""],
+      ["19:00~20:30","","하멜로 저녁 권역","저녁","",[["오팔공","조개구이"],["보물섬","해물전복물회 · 전복죽"],["돌문어상회","돌문어삼합 · 돌문어라면"]]],["20:30~21:15","하멜로 저녁 권역","낭만포차·종포해양공원","여수 밤바다 산책",""],
       ["21:15~21:35","종포해양공원","숙소(복귀)","이동·체크인","택시"]
     ]
   },
@@ -207,7 +219,7 @@ const trips = [{
     ],
     rows: [
       ["10:00","","숙소","기상",""],["10:00~11:00","","숙소","준비",""],["11:00","","숙소","체크아웃",""],
-      ["11:00~11:20","숙소","엑스포역 권역","이동","택시"],["11:20~12:20","","미가칼국수 또는 엑스포식육식당","점심","미가칼국수(칼국수) / 엑스포식육식당(제육볶음·찌개)"],
+      ["11:00~11:20","숙소","엑스포역 권역","이동","택시"],["11:20~12:20","","미가칼국수 또는 엑스포식육식당","점심","",[["미가칼국수","칼국수"],["엑스포식육식당","제육볶음 · 찌개"]]],
       ["12:20~12:30","점심 식당","레인블러","이동","도보"],["12:30~13:30","","레인블러","카페",""],
       ["13:30~13:40","레인블러","여수엑스포역","이동","도보"],["13:40~14:32","","여수엑스포역","승차 준비",""],
       ["14:32~16:12","여수엑스포역","익산역","열차 이동",""],["16:12~16:27","","익산역","환승","15분"],["16:27~17:23","익산역","광명역","열차 이동",""]
@@ -410,21 +422,56 @@ function renderSchedule(plan, startIdx, endIdx) {
   const body = document.getElementById("schedule-body");
   body.replaceChildren();
   rows.forEach(row => {
-    const [time, origin, dest, activity, note] = row;
+    const [time, origin, dest, activity, note, candidates] = row;
     const tr = document.createElement("tr");
     const td = document.createElement("td");
     const timeText = document.createElement("span");
     const placeText = document.createElement("strong");
-    const detailText = document.createElement("span");
     td.className = "schedule-item";
     td.colSpan = 5;
     timeText.className = "schedule-time";
     timeText.textContent = time;
     placeText.className = "schedule-place";
     placeText.textContent = origin && dest ? `${origin} → ${dest}` : dest || origin;
-    detailText.className = "schedule-detail";
-    detailText.textContent = [activity, note].filter(Boolean).join(" · ");
-    td.append(timeText, placeText, detailText);
+    td.append(timeText, placeText);
+    if (candidates?.length) {
+      const details = document.createElement("details");
+      const summary = document.createElement("summary");
+      const summaryTitle = document.createElement("span");
+      const toggle = document.createElement("span");
+      const openLabel = document.createElement("span");
+      const closeLabel = document.createElement("span");
+      const list = document.createElement("div");
+      details.className = "candidate-details";
+      summaryTitle.textContent = `${activity} 후보 ${candidates.length}곳`;
+      toggle.className = "candidate-toggle";
+      openLabel.className = "candidate-open-label";
+      openLabel.textContent = "펼쳐보기";
+      closeLabel.className = "candidate-close-label";
+      closeLabel.textContent = "접기";
+      toggle.append(openLabel, closeLabel);
+      summary.append(summaryTitle, toggle);
+      list.className = "candidate-list";
+      candidates.forEach(([name, menu]) => {
+        const item = document.createElement("div");
+        const nameText = document.createElement("strong");
+        const menuText = document.createElement("span");
+        item.className = "candidate-item";
+        nameText.className = "candidate-name";
+        nameText.textContent = name;
+        menuText.className = "candidate-menu";
+        menuText.textContent = menu;
+        item.append(nameText, menuText);
+        list.append(item);
+      });
+      details.append(summary, list);
+      td.append(details);
+    } else {
+      const detailText = document.createElement("span");
+      detailText.className = "schedule-detail";
+      detailText.textContent = [activity, note].filter(Boolean).join(" · ");
+      td.append(detailText);
+    }
     tr.append(td);
     body.append(tr);
   });
